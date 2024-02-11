@@ -1,0 +1,21 @@
+﻿<Window x:Class="SSOInformator.InfoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SSOInformator"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        Title="Справка" Height="400" Width="850" Icon="Resources/info_icon.ico">
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <TextBox IsReadOnly="True" TextWrapping="Wrap" FontFamily="Arial" FontSize="20" xml:space="preserve">ОРЭ Информатор представляет собой программу оповещения специалистов о внеплановой работе FTP-сервера и подключения к FTP серверу с заданной задержкой в миллисекундах.
+Задержка, а также IP-адрес сервера, логин и пароль задаются в специальном окне настроек приложения. Перейти в это окно можно щёлкнув по соответствующей кнопке. Минимально допустимая задержка - 5000 миллисекунд.
+Если у программы не получится подключится к серверу то она выдаст соответствую ошибку.
+Окно ошибки появляется только в том случае если сервер стал недоступен только что, а в прошлом подключении не было проблем. Принцип основан в целях недопущения спама.
+По аналогичному принципу программа выдаёт окно успешного подключения.
+Кнопка "Старт" запускает работу программы, кнопка "Стоп" останавливает работу программы, кнопка "Очистить" очищает площадь отображения информации о работе программы, кнопка "Выход" закрывает программу.
+            </TextBox>
+        </ScrollViewer>
+    </Grid>
+</Window>
