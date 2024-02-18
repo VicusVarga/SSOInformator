@@ -33,19 +33,24 @@ namespace SSOInformator
             InitializeComponent();
             Instance = this;
         }
-        /*protected override void OnStateChanged(System.EventArgs e) // При свёртывании окна приложения значок на панели Пуск будет пропадать. Не включаю в работу до согласования.
+        protected override void OnStateChanged(System.EventArgs e) // При свёртывании окна приложения значок на панели Пуск будет пропадать. Не включаю в работу до согласования.
         {
             if (WindowState == WindowState.Minimized)
+            {
+                WindowStyle = WindowStyle.ToolWindow;
                 ShowInTaskbar = false;
+            }
             else
+            {
+                WindowStyle = WindowStyle.SingleBorderWindow;
                 ShowInTaskbar = true;
-
+            }
             base.OnStateChanged(e);
-        }*/
+        }
         protected override void OnClosing(CancelEventArgs e) // Обработка при закрытии приложения. Для подтверждения выхода.
         {
-            if (!isAppAlreadyRunning) // Проверяем, не открыто ли уже окно "Приложение уже запущено".
-            {
+            //if (!isAppAlreadyRunning) // Проверяем, не открыто ли уже окно "Приложение уже запущено".
+            //{
                 MessageBoxResult result = MessageBox.Show("Вы действительно хотите закрыть приложение?",
                                                           "Подтверждение закрытия", MessageBoxButton.YesNo,
                                                           MessageBoxImage.Information);
@@ -54,7 +59,7 @@ namespace SSOInformator
                 {
                     e.Cancel = true;
                 }
-            }
+            //}
 
             base.OnClosing(e);
         }
