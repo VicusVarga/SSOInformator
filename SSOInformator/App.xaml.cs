@@ -30,8 +30,6 @@ namespace SSOInformator
 
                 // Устанавливаем флаг, указывающий, что есть окно "Приложение уже запущено" дабы избежать дальнейшего окна "Вы хотите закрыть приложение?"
                 ((MainWindow)Current.MainWindow).isAppAlreadyRunning = true; //КОСТЫЛЬ ВЫХОДА!!!!!
-
-                Current.Shutdown();//сюда не доходит
             }
 
             _notifyIcon.Icon = new System.Drawing.Icon("Resources/informatorIdle_icon.ico");

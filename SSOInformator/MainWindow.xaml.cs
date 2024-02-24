@@ -49,8 +49,6 @@ namespace SSOInformator
         }
         protected override void OnClosing(CancelEventArgs e) // Обработка при закрытии приложения. Для подтверждения выхода.
         {
-            //if (!isAppAlreadyRunning) // Проверяем, не открыто ли уже окно "Приложение уже запущено".
-            //{
                 MessageBoxResult result = MessageBox.Show("Вы действительно хотите закрыть приложение?",
                                                           "Подтверждение закрытия", MessageBoxButton.YesNo,
                                                           MessageBoxImage.Information);
@@ -59,8 +57,6 @@ namespace SSOInformator
                 {
                     e.Cancel = true;
                 }
-            //}
-
             base.OnClosing(e);
         }
         public class Connection // Класс Подключений со сведением о подключаемом сервере.
