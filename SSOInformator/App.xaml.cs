@@ -36,7 +36,7 @@ namespace SSOInformator
             _notifyIcon.Text = "ОРЭ Информатор. Состояние - Подключение не запущено.";      // Задание первоначального текста при наведении и иконки в трее
             _notifyIcon.Click += NotifyIcon_Click;
 
-            var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
+            /*var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
             exitMenuItem.Click += ExitMenuItem_Click;
             var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");      // Задание кнопок контекстного меню для иконки в трее
             settingsMenuItem.Click += SettingsMenuItem_Click;
@@ -45,12 +45,12 @@ namespace SSOInformator
             contextMenu.MenuItems.Add(settingsMenuItem);                                
             contextMenu.MenuItems.Add(exitMenuItem);
 
-            _notifyIcon.ContextMenu = contextMenu;
+            _notifyIcon.ContextMenu = contextMenu;*/
             _notifyIcon.Visible = true;
 
             base.OnStartup(e);
         }
-        private void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
+        public void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
         {
             bool isWindowOpen = false;
 
@@ -71,7 +71,7 @@ namespace SSOInformator
                 settingsWindow.ShowDialog();
             }
         }
-        private void ExitMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Выход" в трее
+        public void ExitMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Выход" в трее
         {
             MainWindow.Close();
         }

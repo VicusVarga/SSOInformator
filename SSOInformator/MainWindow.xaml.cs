@@ -296,29 +296,63 @@ namespace SSOInformator
         private void AddStartToContexMenu(object sender, RoutedEventArgs e) // Функция добавления "Запустить" в контекстное меню
         {
             App app = Application.Current as App;
-            if (!MenuItemAdded)
-            {
-                var startmenu = new System.Windows.Forms.MenuItem("Запустить");
-                startmenu.Click += StartButton_Click;
-                var contextMenu = app._notifyIcon.ContextMenu;
-                contextMenu.MenuItems.Add(startmenu);
+            var contextMenu = app._notifyIcon.ContextMenu;
 
-                MenuItemAdded = true; // Устанавливаем флаг в true, чтобы пометить, что кнопка "Запустить" уже добавлена
+            if (contextMenu != null)
+            {
+                // Очистить существующее контекстное меню
+                contextMenu.MenuItems.Clear();
             }
+            else
+            {
+                // Если контекстное меню не установлено, создать новый экземпляр
+                contextMenu = new System.Windows.Forms.ContextMenu();
+                app._notifyIcon.ContextMenu = contextMenu;
+            }
+
+            // Добавить новые элементы меню
+            var startMenuItem = new System.Windows.Forms.MenuItem("Запустить");
+            startMenuItem.Click += StartButton_Click;
+            contextMenu.MenuItems.Add(startMenuItem);
+
+            var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");
+            settingsMenuItem.Click += ((App)Application.Current).SettingsMenuItem_Click;
+            contextMenu.MenuItems.Add(settingsMenuItem);
+
+            var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
+            exitMenuItem.Click += ((App)Application.Current).ExitMenuItem_Click;
+            contextMenu.MenuItems.Add(exitMenuItem);
         }
 
-        private void AddStopToContexMenu(object sender, RoutedEventArgs e) // Функция добавления "Остановить" в контекстное меню
+        private void AddStopToContexMenu(object sender, RoutedEventArgs e)
         {
             App app = Application.Current as App;
-            if (!MenuItemAdded)
-            {
-                var stopmenu = new System.Windows.Forms.MenuItem("Остановить");
-                stopmenu.Click += StopButton_Click;
-                var contextMenu = app._notifyIcon.ContextMenu;
-                contextMenu.MenuItems.Add(stopmenu);
+            var contextMenu = app._notifyIcon.ContextMenu;
 
-                MenuItemAdded = true; // Устанавливаем флаг в true, чтобы пометить, что кнопка "Остановить" уже добавлена
+            if (contextMenu != null)
+            {
+                // Очистить существующее контекстное меню
+                contextMenu.MenuItems.Clear();
             }
+            else
+            {
+                // Если контекстное меню не установлено, создать новый экземпляр
+                contextMenu = new System.Windows.Forms.ContextMenu();
+                app._notifyIcon.ContextMenu = contextMenu;
+            }
+
+            // Добавить новые элементы меню
+            var stopMenuItem = new System.Windows.Forms.MenuItem("Остановить");
+            stopMenuItem.Click += StopButton_Click;
+            contextMenu.MenuItems.Add(stopMenuItem);
+
+            var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");
+            settingsMenuItem.Click += ((App)Application.Current).SettingsMenuItem_Click;
+            contextMenu.MenuItems.Add(settingsMenuItem);
+
+            var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
+            exitMenuItem.Click += ((App)Application.Current).ExitMenuItem_Click;
+            contextMenu.MenuItems.Add(exitMenuItem);
         }
         private void ChangeTrayIconOnError(object sender, RoutedEventArgs e) // Функция смены иконки в трее на красную
         {
