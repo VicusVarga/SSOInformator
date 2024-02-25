@@ -35,45 +35,9 @@ namespace SSOInformator
             _notifyIcon.Icon = new System.Drawing.Icon("Resources/informatorIdle_icon.ico");
             _notifyIcon.Text = "ОРЭ Информатор. Состояние - Подключение не запущено.";      // Задание первоначального текста при наведении и иконки в трее
             _notifyIcon.Click += NotifyIcon_Click;
-
-            /*var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
-            exitMenuItem.Click += ExitMenuItem_Click;
-            var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");      // Задание кнопок контекстного меню для иконки в трее
-            settingsMenuItem.Click += SettingsMenuItem_Click;
-
-            var contextMenu = new System.Windows.Forms.ContextMenu();
-            contextMenu.MenuItems.Add(settingsMenuItem);                                
-            contextMenu.MenuItems.Add(exitMenuItem);
-
-            _notifyIcon.ContextMenu = contextMenu;*/
             _notifyIcon.Visible = true;
 
             base.OnStartup(e);
-        }
-        public void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
-        {
-            bool isWindowOpen = false;
-
-            foreach (Window w in Application.Current.Windows)
-            {
-                if (w is SettingsWindow)
-                {
-                    isWindowOpen = true;
-                    w.Activate();
-                }
-            }
-
-            if (!isWindowOpen)
-            {
-                MainWindow.WindowState = WindowState.Normal;
-                MainWindow.Activate();
-                SettingsWindow settingsWindow = new SettingsWindow();
-                settingsWindow.ShowDialog();
-            }
-        }
-        public void ExitMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Выход" в трее
-        {
-            MainWindow.Close();
         }
         private void NotifyIcon_Click(object sender, EventArgs e) // Обработка разворачивания окна при клике по иконке в трее
         {

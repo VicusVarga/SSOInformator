@@ -16,7 +16,7 @@ namespace SSOInformator
             string errorMessage = "";
             foreach (Mistake IpAdress in Ipinfo)
             {
-                errorMessage += "IP-адрес: " + IpAdress.IPAddress + "\n";
+                errorMessage += "Подключение успешно!\nIP-адрес: " + IpAdress.IPAddress + "\n";
             }
             SucessLabel.Text = errorMessage;
         }

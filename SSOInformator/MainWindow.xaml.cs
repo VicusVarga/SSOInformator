@@ -316,14 +316,13 @@ namespace SSOInformator
             contextMenu.MenuItems.Add(startMenuItem);
 
             var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");
-            settingsMenuItem.Click += ((App)Application.Current).SettingsMenuItem_Click;
+            settingsMenuItem.Click += SettingsMenuItem_Click;
             contextMenu.MenuItems.Add(settingsMenuItem);
 
             var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
-            exitMenuItem.Click += ((App)Application.Current).ExitMenuItem_Click;
+            exitMenuItem.Click += ExitMenuItem_Click;
             contextMenu.MenuItems.Add(exitMenuItem);
         }
-
         private void AddStopToContexMenu(object sender, RoutedEventArgs e)
         {
             App app = Application.Current as App;
@@ -347,12 +346,36 @@ namespace SSOInformator
             contextMenu.MenuItems.Add(stopMenuItem);
 
             var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");
-            settingsMenuItem.Click += ((App)Application.Current).SettingsMenuItem_Click;
+            settingsMenuItem.Click += SettingsMenuItem_Click;
             contextMenu.MenuItems.Add(settingsMenuItem);
 
             var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
-            exitMenuItem.Click += ((App)Application.Current).ExitMenuItem_Click;
+            exitMenuItem.Click += ExitMenuItem_Click;
             contextMenu.MenuItems.Add(exitMenuItem);
+        }
+        public void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
+        {
+            bool isWindowOpen = false;
+
+            foreach (Window w in Application.Current.Windows)
+            {
+                if (w is SettingsWindow)
+                {
+                    isWindowOpen = true;
+                    w.Activate();
+                }
+            }
+            if (!isWindowOpen)
+            {
+                WindowState = WindowState.Normal;
+                Activate();
+                SettingsWindow settingsWindow = new SettingsWindow();
+                settingsWindow.ShowDialog();
+            }
+        }
+        public void ExitMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Выход" в трее
+        {
+            Close();
         }
         private void ChangeTrayIconOnError(object sender, RoutedEventArgs e) // Функция смены иконки в трее на красную
         {
