@@ -13,7 +13,7 @@ namespace SSOInformator
     {
         public Forms.NotifyIcon _notifyIcon; // Для иконки в трее
 
-        public App()
+        private App()
         {
             _notifyIcon = new Forms.NotifyIcon(); //для иконки в трее
         }
@@ -29,7 +29,9 @@ namespace SSOInformator
                                 "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Устанавливаем флаг, указывающий, что есть окно "Приложение уже запущено" дабы избежать дальнейшего окна "Вы хотите закрыть приложение?"
-                ((MainWindow)Current.MainWindow).isAppAlreadyRunning = true; //КОСТЫЛЬ ВЫХОДА!!!!!
+                ((MainWindow)Current.MainWindow).isAppAlreadyRunning = true; // По идеи тут мы даём информацию что приложение уже запущено и должны были бы обрабатывать это
+                                                                             // в функции "OnClosing" чтобы не видеть окна подтверждения закрытия, но здесь вызывается исключение
+                                                                             // и поэтому новый экземпляр просто сам закрывается, пока что такой полу-костыль:)
             }
 
             _notifyIcon.Icon = new System.Drawing.Icon("Resources/informatorIdle_icon.ico");

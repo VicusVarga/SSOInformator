@@ -17,13 +17,13 @@ namespace SSOInformator
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
-    { 
-        public static int delayValue; //переменная задержки
+    {
+        private static int delayValue; //переменная задержки
         private InfoWindow infoWindow; // Поле для хранения ссылки на информационное окно
         private bool isRunning = true; // Флаг для контроля работы цикла
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
-        public static List<Connection> _connections = new List<Connection>();
+        private static List<Connection> _connections = new List<Connection>();
 
         private CancellationTokenSource cancellationTokenSource; // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                  // Обработчик события для кнопки "Ок"
@@ -33,7 +33,7 @@ namespace SSOInformator
             InitializeComponent();
             Instance = this;
         }
-        protected override void OnStateChanged(System.EventArgs e) // При свёртывании окна приложения значок на панели Пуск будет пропадать. Не включаю в работу до согласования.
+        protected override void OnStateChanged(System.EventArgs e) // При свёртывании окна приложения значок на панели пуск и в alt-tab будет пропадать.
         {
             if (WindowState == WindowState.Minimized)
             {
@@ -52,7 +52,6 @@ namespace SSOInformator
                 MessageBoxResult result = MessageBox.Show("Вы действительно хотите закрыть приложение?",
                                                           "Подтверждение закрытия", MessageBoxButton.YesNo,
                                                           MessageBoxImage.Information);
-
                 if (result == MessageBoxResult.No)
                 {
                     e.Cancel = true;
@@ -71,7 +70,7 @@ namespace SSOInformator
             public string IPAddress { set; get; }
             public string typeofmistake { set; get; }
         }
-        public async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
+        private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
             isRunning = true; // Флаг для контроля работы бесконечного цикла
             StopButton.IsEnabled = true; // Активация кнопки "стоп"
@@ -140,7 +139,7 @@ namespace SSOInformator
                         ChangeTrayIconOnStable(this, new RoutedEventArgs()); // Смена иконки в трее на зелёную
                         if (conn.notfall == false) // Если сервер был в ауте в прошлом цикле, а сейчас удалось подключится показываем окно успеха
                             {
-                                Mistake mist = new Mistake(); // Айпи берём из класса об ошибках:)
+                                Mistake mist = new Mistake(); // Айпи берём из класса об ошибках
                                 mist.IPAddress = conn.IPAddress;
                                 mistakes.Add(mist);
                                 SuccessWindow successWindow = new SuccessWindow(mistakes);
@@ -156,7 +155,7 @@ namespace SSOInformator
 
                                 }
                             }
-                            conn.notfall = true; // Текущее состояние сервера - стабильное.
+                            conn.notfall = true; // Обозначаем текущее состояние сервера как стабильное.
                     }
 
                     catch (WebException ex) // Вызывается если не удалось подключиться
@@ -207,7 +206,7 @@ namespace SSOInformator
             }
             return true;
         }
-        public static string ReadSettingsFromFile(string error) //Функция чтения файла Settings в классы
+        private static string ReadSettingsFromFile(string error) //Функция чтения файла Settings в классы
         {
             StreamReader settings = new StreamReader(Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName + "/Resources/Settings.ini"));
             _connections = new List<Connection>();
@@ -236,7 +235,7 @@ namespace SSOInformator
                             return error;
                         }
                     }
-                    else if (split.Length == 3 || split.Length == 2) // Длина 3 айпи,логин,пароль Длина 2 айпи,логин
+                    else if (split.Length == 3 || split.Length == 2) // Длина 3 - это через пробел айпи,логин,пароль Длина 2 - это через пробел айпи,логин
                     {
                         try
                         {
@@ -263,13 +262,13 @@ namespace SSOInformator
             }
             return error;
         }
-        public void StopButton_Click(object sender, EventArgs e)
+        private void StopButton_Click(object sender, EventArgs e)
         {
             if (cancellationTokenSource != null)
             {
                 cancellationTokenSource.Cancel(); // Запрос отмены потока(Бесконечного цикла в функции StartButton_Click)
                 cancellationTokenSource = null;
-                MainWindow.Instance.ConsoleTextBox.Text += "Выполнение программы остановлено.\n";
+                MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение программы остановлено.\n";
             }
             ChangeTrayIconOnIdle(this, new RoutedEventArgs()); // Смена иконки на обычную(безцветную)
             StartButton.IsEnabled = true;
@@ -353,7 +352,7 @@ namespace SSOInformator
             exitMenuItem.Click += ExitMenuItem_Click;
             contextMenu.MenuItems.Add(exitMenuItem);
         }
-        public void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
+        private void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
         {
             bool isWindowOpen = false;
 
@@ -373,7 +372,7 @@ namespace SSOInformator
                 settingsWindow.ShowDialog();
             }
         }
-        public void ExitMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Выход" в трее
+        private void ExitMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Выход" в трее
         {
             Close();
         }
