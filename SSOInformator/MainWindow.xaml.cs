@@ -20,7 +20,6 @@ namespace SSOInformator
     {
         private static int delayValue; //переменная задержки
         private InfoWindow infoWindow; // Поле для хранения ссылки на информационное окно
-        private bool isRunning = true; // Флаг для контроля работы цикла
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
@@ -72,7 +71,6 @@ namespace SSOInformator
         }
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
-            isRunning = true; // Флаг для контроля работы бесконечного цикла
             StopButton.IsEnabled = true; // Активация кнопки "стоп"
             StartButton.IsEnabled = false; // Блок кнопки "старт"
             string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
@@ -123,7 +121,7 @@ namespace SSOInformator
 
             AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
 
-            while (isRunning) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
+            while (true) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
             {            // сообщение ошибки показывается в том случае если это первый сбой в подключении к IP. Т.е. подключение к этому IP-адресу в прошлом цикле было успешным.
                          // аналогично с сообщением об успехе
                 foreach (Connection conn in _connections)
