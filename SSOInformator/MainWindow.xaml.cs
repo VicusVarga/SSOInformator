@@ -23,6 +23,7 @@ namespace SSOInformator
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
+        bool ServerIsStable = true; // булевое поле которое будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
 
         private CancellationTokenSource cancellationTokenSource; // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                  // Обработчик события для кнопки "Ок"
@@ -61,8 +62,7 @@ namespace SSOInformator
         {
             public string IPAddress { set; get; }
             public string Login { set; get; }
-            public string Password { set; get; }
-            public bool notfall { set; get; } // булевое поле которое будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
+            public string Password { set; get; } 
         }
         public class Mistake  // Класс для записи "Ip адрес-ошибка"
         {
@@ -73,33 +73,6 @@ namespace SSOInformator
         {
             StopButton.IsEnabled = true; // Активация кнопки "стоп"
             StartButton.IsEnabled = false; // Блок кнопки "старт"
-            string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
-            bool NoSettings = CheckFiles(settingsPath); //вызов функции поиска settings.txt
-            if (!NoSettings) // обработка если была проблема с settings.txt
-            {
-                string message = "С последнего запуска приложения настройки не были определены. Пожалуйста, назначьте их";
-                MessageBox.Show(message, "Внимание", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                StartButton.IsEnabled = true;
-                StopButton.IsEnabled= false;
-                WindowState = WindowState.Normal;
-                SettingsWindow settingsWindow = new SettingsWindow();
-                settingsWindow.ShowDialog();
-                AddStartToContexMenu(this, new RoutedEventArgs());
-                return;
-            }
-            string error = "";
-            error = ReadSettingsFromFile(error); //Вызов функции записи данных из Settings.txt в классы
-
-            if (!string.IsNullOrEmpty(error)) // обработка если была проблема с settings.txt
-            {
-                MessageBox.Show(error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                StartButton.IsEnabled = true;
-                StopButton.IsEnabled = false;
-                SettingsWindow settingsWindow = new SettingsWindow();
-                settingsWindow.ShowDialog();                            // Открытия окна с настройками
-                AddStartToContexMenu(this, new RoutedEventArgs());
-                return;
-            }
             List<Mistake> mistakes = new List<Mistake>(); //создание списка для записи айпишников неудачных подключений и видов ошибок для дальнейшей отправки в одно письмо
             cancellationTokenSource = new CancellationTokenSource(); // для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
  
@@ -120,10 +93,24 @@ namespace SSOInformator
             }
 
             AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
-
+            ServerIsStable = true;
             while (true) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
             {            // сообщение ошибки показывается в том случае если это первый сбой в подключении к IP. Т.е. подключение к этому IP-адресу в прошлом цикле было успешным.
                          // аналогично с сообщением об успехе
+                string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
+                string error = "";
+                error = ReadSettingsFromFile(error, settingsPath); //Вызов функции записи данных из Settings.txt в классы
+                if (!string.IsNullOrEmpty(error)) // обработка если была проблема с settings.txt
+                {
+                    StopButton_Click(StopButton, EventArgs.Empty);
+                    MessageBox.Show(error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    StartButton.IsEnabled = true;
+                    StopButton.IsEnabled = false;
+                    SettingsWindow settingsWindow = new SettingsWindow();
+                    settingsWindow.ShowDialog();                            // Открытия окна с настройками
+                    AddStartToContexMenu(this, new RoutedEventArgs());
+                    return;
+                }
                 foreach (Connection conn in _connections)
                 {
                     await ConnectToFtpServerAsync(conn, mistakes);
@@ -150,10 +137,10 @@ namespace SSOInformator
 
                 using (CancellationTokenSource cts = new CancellationTokenSource())
                 {
-                   // cts.CancelAfter(TimeSpan.FromSeconds(3));
+                    cts.CancelAfter(TimeSpan.FromSeconds(10));
                     var responseTask = request.GetResponseAsync();
 
-                    if (await Task.WhenAny(responseTask, Task.Delay(TimeSpan.FromSeconds(3), cts.Token)) != responseTask)
+                    if (await Task.WhenAny(responseTask, Task.Delay(TimeSpan.FromSeconds(10), cts.Token)) != responseTask)
                     {
                         throw new TimeoutException();
                     }
@@ -163,7 +150,7 @@ namespace SSOInformator
                         MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!";
                         ChangeTrayIconOnStable(this, new RoutedEventArgs());
 
-                        if (conn.notfall == false)
+                        if (ServerIsStable == false)
                         {
                             Mistake mist = new Mistake();
                             mist.IPAddress = conn.IPAddress;
@@ -181,7 +168,7 @@ namespace SSOInformator
 
                             }
                         }
-                        conn.notfall = true;
+                        ServerIsStable = true;
                     }
                 }
             }
@@ -191,9 +178,8 @@ namespace SSOInformator
                 MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: " + ex.Message;
                 ChangeTrayIconOnError(this, new RoutedEventArgs());
 
-                if (conn.notfall == true)
+                if (ServerIsStable == true)
                 {
-                    conn.notfall = false;
                     Mistake mist = new Mistake();
                     mist.IPAddress = conn.IPAddress;
                     mist.typeofmistake = ex.Message;
@@ -212,21 +198,19 @@ namespace SSOInformator
                     {
 
                     }
+                    ServerIsStable = false;
                 }
             }
 
             MainWindow.Instance.ConsoleTextBox.Text += "\n";
         }
-        private static bool CheckFiles(string settingsPath) //функция проверки наличия файла settings и записей в нём
+        private static string ReadSettingsFromFile(string error, string settingsPath) //Функция чтения файла Settings в классы
         {
             if (!File.Exists(settingsPath) || new FileInfo(settingsPath).Length == 0)
             {
-                return false;
+                error += "С последнего запуска приложения настройки не были определены. Пожалуйста, назначьте их.\n";
+                return error;
             }
-            return true;
-        }
-        private static string ReadSettingsFromFile(string error) //Функция чтения файла Settings в классы
-        {
             StreamReader settings = new StreamReader(Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName + "/Resources/Settings.ini"));
             _connections = new List<Connection>();
             bool hasValidIP = false;
@@ -262,7 +246,6 @@ namespace SSOInformator
                             conn.IPAddress = split[0];
                             conn.Login = split[1];
                             conn.Password = split[2];
-                            conn.notfall = true;
                             _connections.Add(conn);
                             hasValidIP = true;
                         }

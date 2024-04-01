@@ -61,7 +61,7 @@ namespace SSOInformator
             File.WriteAllText(settingsPath, ""); //очищение старых данных файла Settings
             File.AppendAllText(settingsPath, delayValue + Environment.NewLine);                                // Запись данных в файл        
             File.AppendAllText(settingsPath, $"{ipValue} {loginValue} {passwordValue}" + Environment.NewLine); //
-            string message = "Настройки сохранены. Если программа уже работает, перезапустите подключение, чтобы использовать последние настройки.";
+            string message = "Настройки сохранены и будут автоматически применены в следующем подключении.";
             MessageBox.Show(message, "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
             Window window = Window.GetWindow(this);
             window.Close();
