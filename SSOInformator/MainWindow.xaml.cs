@@ -126,63 +126,7 @@ namespace SSOInformator
                          // аналогично с сообщением об успехе
                 foreach (Connection conn in _connections)
                 {
-                    try
-                    {
-                        FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress);   // Само подключение к серверу
-                        request.Credentials = new NetworkCredential(conn.Login, conn.Password);                //
-                        request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                           //
-                        using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())                // Если будет проблема с подключением тут вызовется исключение и переход на блок catch
-
-                        MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "]" + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!"; // Вывод на текстбокс в программе
-                        ChangeTrayIconOnStable(this, new RoutedEventArgs()); // Смена иконки в трее на зелёную
-                        if (conn.notfall == false) // Если сервер был в ауте в прошлом цикле, а сейчас удалось подключится показываем окно успеха
-                            {
-                                Mistake mist = new Mistake(); // Айпи берём из класса об ошибках
-                                mist.IPAddress = conn.IPAddress;
-                                mistakes.Add(mist);
-                                SuccessWindow successWindow = new SuccessWindow(mistakes);
-                                successWindow.Topmost = true;
-                                successWindow.Show();
-                                try
-                                {
-                                    SoundPlayer Ipinfosound = new SoundPlayer("Resources/success_sound.wav");
-                                    Ipinfosound.Play();
-                                }
-                                catch (Exception)
-                                {
-
-                                }
-                            }
-                            conn.notfall = true; // Обозначаем текущее состояние сервера как стабильное.
-                    }
-
-                    catch (WebException ex) // Вызывается если не удалось подключиться
-                    {
-                        MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "]" + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: " + ex.Message; // Вывод на текстбокс в программе
-                        ChangeTrayIconOnError(this, new RoutedEventArgs()); // Смена иконки в трее на красную 
-                        if (conn.notfall == true) // Если подключение было успешным в прошлом цикле, а сейчас не удалось подключится показываем окно ошибки
-                        {
-                            conn.notfall = false;
-                            Mistake mist = new Mistake();
-                            mist.IPAddress = conn.IPAddress;
-                            mist.typeofmistake = ex.Message;
-                            mistakes.Add(mist);
-                            ErrorWindow errorWindow = new ErrorWindow(mistakes);
-                            errorWindow.Topmost = true;
-                            errorWindow.Show();
-                            try
-                            {
-                                SoundPlayer mistakesound = new SoundPlayer("Resources/error_sound.wav");
-                                mistakesound.Play();
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-                        }
-
-                    }
-                    MainWindow.Instance.ConsoleTextBox.Text += "\n";
+                    await ConnectToFtpServerAsync(conn, mistakes);
                 }
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
                 try
@@ -195,6 +139,83 @@ namespace SSOInformator
                     return; // Завершить всю функцию кнопки "старт"
                 }
             }
+        }
+        private async Task ConnectToFtpServerAsync(Connection conn, List<Mistake> mistakes)
+        {
+            try
+            {
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress);
+                request.Credentials = new NetworkCredential(conn.Login, conn.Password);
+                request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
+
+                using (CancellationTokenSource cts = new CancellationTokenSource())
+                {
+                   // cts.CancelAfter(TimeSpan.FromSeconds(3));
+                    var responseTask = request.GetResponseAsync();
+
+                    if (await Task.WhenAny(responseTask, Task.Delay(TimeSpan.FromSeconds(3), cts.Token)) != responseTask)
+                    {
+                        throw new TimeoutException();
+                    }
+
+                    using (FtpWebResponse response = (FtpWebResponse)await responseTask)
+                    {
+                        MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!";
+                        ChangeTrayIconOnStable(this, new RoutedEventArgs());
+
+                        if (conn.notfall == false)
+                        {
+                            Mistake mist = new Mistake();
+                            mist.IPAddress = conn.IPAddress;
+                            mistakes.Add(mist);
+                            SuccessWindow successWindow = new SuccessWindow(mistakes);
+                            successWindow.Topmost = true;
+                            successWindow.Show();
+                            try
+                            {
+                                SoundPlayer Ipinfosound = new SoundPlayer("Resources/success_sound.wav");
+                                Ipinfosound.Play();
+                            }
+                            catch (Exception)
+                            {
+
+                            }
+                        }
+                        conn.notfall = true;
+                    }
+                }
+            }
+            catch (Exception ex)  // Обработка исключений TimeoutException и WebException
+            {
+
+                MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: " + ex.Message;
+                ChangeTrayIconOnError(this, new RoutedEventArgs());
+
+                if (conn.notfall == true)
+                {
+                    conn.notfall = false;
+                    Mistake mist = new Mistake();
+                    mist.IPAddress = conn.IPAddress;
+                    mist.typeofmistake = ex.Message;
+                    mistakes.Add(mist);
+
+                    ErrorWindow errorWindow = new ErrorWindow(mistakes);
+                    errorWindow.Topmost = true;
+                    errorWindow.Show();
+
+                    try
+                    {
+                        SoundPlayer mistakesound = new SoundPlayer("Resources/error_sound.wav");
+                        mistakesound.Play();
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+            }
+
+            MainWindow.Instance.ConsoleTextBox.Text += "\n";
         }
         private static bool CheckFiles(string settingsPath) //функция проверки наличия файла settings и записей в нём
         {
