@@ -25,8 +25,8 @@ namespace SSOInformator
         private static List<Connection> _connections = new List<Connection>();
         bool ServerIsStable = true; // булевое поле которое будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
 
-        private CancellationTokenSource cancellationTokenSource; // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
-                                                                 // Обработчик события для кнопки "Ок"
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
+                                                                                                 // Обработчик события для кнопки "Ок"
         public static MainWindow Instance { get; private set; }
         public MainWindow()
         {
@@ -94,7 +94,7 @@ namespace SSOInformator
 
             ServerIsStable = true;
             AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
-            while (true) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
+            while (cancellationTokenSource != null) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
             {            // сообщение ошибки показывается в том случае если это первый сбой в подключении к IP. Т.е. подключение к этому IP-адресу в прошлом цикле было успешным.
                          // аналогично с сообщением об успехе
                 string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
@@ -113,12 +113,18 @@ namespace SSOInformator
                 }
                 foreach (Connection conn in _connections)
                 {
-                    await ConnectToFtpServerAsync(conn, mistakes);
+                    if (cancellationTokenSource != null)
+                    {
+                        await ConnectToFtpServerAsync(conn, mistakes);
+                    }
                 }
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
                 try
                 {
-                    await Task.Delay(delayValue, cancellationTokenSource.Token); // Задержка с мониторингом отмены потока
+                    if (cancellationTokenSource != null)
+                    {
+                        await Task.Delay(delayValue, cancellationTokenSource.Token); // Задержка с мониторингом отмены потока
+                    }
                 }
                 catch (TaskCanceledException)
                 {
@@ -138,19 +144,21 @@ namespace SSOInformator
                 using (CancellationTokenSource cts = new CancellationTokenSource())
                 {
                     var responseTask = request.GetResponseAsync();
-                    var delayTask = Task.Delay(TimeSpan.FromSeconds(5));
+                    var delayTask = Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
 
-                    if (await Task.WhenAny(responseTask, delayTask) != responseTask)
+                    cts.CancelAfter(TimeSpan.FromSeconds(5));
+                    await Task.WhenAny(responseTask, delayTask);
+                    cts.Token.ThrowIfCancellationRequested();
+                    if (cancellationTokenSource == null)
                     {
-                        throw new TimeoutException();
+                        return;
                     }
-
                     using (FtpWebResponse response = (FtpWebResponse)await responseTask)
                     {
                         MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!";
                         ChangeTrayIconOnStable(this, new RoutedEventArgs());
 
-                        if (ServerIsStable == false)
+                        if (!ServerIsStable)
                         {
                             Mistake mist = new Mistake();
                             mist.IPAddress = conn.IPAddress;
@@ -160,25 +168,28 @@ namespace SSOInformator
                             successWindow.Show();
                             try
                             {
-                                SoundPlayer Ipinfosound = new SoundPlayer("Resources/success_sound.wav");
-                                Ipinfosound.Play();
+                                SoundPlayer successSound = new SoundPlayer("Resources/success_sound.wav");
+                                successSound.Play();
                             }
                             catch (Exception)
                             {
-
+                                // Звук не проигрался
                             }
                         }
                         ServerIsStable = true;
                     }
                 }
             }
-            catch (Exception ex)  // Обработка исключений TimeoutException и WebException
+            catch (Exception ex)
             {
-
+                if (cancellationTokenSource == null)
+                {
+                    return;
+                }
                 MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: " + ex.Message;
                 ChangeTrayIconOnError(this, new RoutedEventArgs());
 
-                if (ServerIsStable == true)
+                if (ServerIsStable)
                 {
                     Mistake mist = new Mistake();
                     mist.IPAddress = conn.IPAddress;
@@ -191,12 +202,12 @@ namespace SSOInformator
 
                     try
                     {
-                        SoundPlayer mistakesound = new SoundPlayer("Resources/error_sound.wav");
-                        mistakesound.Play();
+                        SoundPlayer errorSound = new SoundPlayer("Resources/error_sound.wav");
+                        errorSound.Play();
                     }
                     catch (Exception)
                     {
-
+                        // Обработка ошибки проигрывания звука
                     }
                     ServerIsStable = false;
                 }
