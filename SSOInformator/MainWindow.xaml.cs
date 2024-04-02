@@ -23,7 +23,7 @@ namespace SSOInformator
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
-        bool ServerIsStable = true; // булевое поле которое будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
+        bool serverIsStable = true; // булевое поле которое будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false;
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
@@ -72,6 +72,10 @@ namespace SSOInformator
         }
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
+            if (isRequestInProgress == true)
+            {
+                return;
+            }
             StopButton.IsEnabled = true; // Активация кнопки "стоп"
             StartButton.IsEnabled = false; // Блок кнопки "старт"
             List<Mistake> mistakes = new List<Mistake>(); //создание списка для записи айпишников неудачных подключений и видов ошибок для дальнейшей отправки в одно письмо
@@ -93,7 +97,7 @@ namespace SSOInformator
                 MenuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Запустить" была удалена
             }
 
-            ServerIsStable = true;
+            serverIsStable = true;
             AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
             while (cancellationTokenSource != null) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
             {            // сообщение ошибки показывается в том случае если это первый сбой в подключении к IP. Т.е. подключение к этому IP-адресу в прошлом цикле было успешным.
@@ -114,7 +118,7 @@ namespace SSOInformator
                 }
                 foreach (Connection conn in _connections)
                 {
-                    if (cancellationTokenSource != null && isRequestInProgress == false)
+                    if (cancellationTokenSource != null)
                     {
                         isRequestInProgress = true;
                         await ConnectToFtpServerAsync(conn, mistakes);
@@ -161,7 +165,7 @@ namespace SSOInformator
                         MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!";
                         ChangeTrayIconOnStable(this, new RoutedEventArgs());
 
-                        if (!ServerIsStable)
+                        if (!serverIsStable)
                         {
                             Mistake mist = new Mistake();
                             mist.IPAddress = conn.IPAddress;
@@ -179,7 +183,7 @@ namespace SSOInformator
                                 // Звук не проигрался
                             }
                         }
-                        ServerIsStable = true;
+                        serverIsStable = true;
                     }
                 }
             }
@@ -200,7 +204,7 @@ namespace SSOInformator
                 }
                 ChangeTrayIconOnError(this, new RoutedEventArgs());
 
-                if (ServerIsStable)
+                if (serverIsStable)
                 {
                     Mistake mist = new Mistake();
                     mist.IPAddress = conn.IPAddress;
@@ -220,7 +224,7 @@ namespace SSOInformator
                     {
                         // Обработка ошибки проигрывания звука
                     }
-                    ServerIsStable = false;
+                    serverIsStable = false;
                 }
             }
 
