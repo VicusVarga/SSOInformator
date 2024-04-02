@@ -92,8 +92,8 @@ namespace SSOInformator
                 MenuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Запустить" была удалена
             }
 
-            AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
             ServerIsStable = true;
+            AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
             while (true) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
             {            // сообщение ошибки показывается в том случае если это первый сбой в подключении к IP. Т.е. подключение к этому IP-адресу в прошлом цикле было успешным.
                          // аналогично с сообщением об успехе
@@ -137,10 +137,10 @@ namespace SSOInformator
 
                 using (CancellationTokenSource cts = new CancellationTokenSource())
                 {
-                    cts.CancelAfter(TimeSpan.FromSeconds(10));
                     var responseTask = request.GetResponseAsync();
+                    var delayTask = Task.Delay(TimeSpan.FromSeconds(5));
 
-                    if (await Task.WhenAny(responseTask, Task.Delay(TimeSpan.FromSeconds(10), cts.Token)) != responseTask)
+                    if (await Task.WhenAny(responseTask, delayTask) != responseTask)
                     {
                         throw new TimeoutException();
                     }
@@ -269,6 +269,7 @@ namespace SSOInformator
             if (cancellationTokenSource != null)
             {
                 cancellationTokenSource.Cancel(); // Запрос отмены потока(Бесконечного цикла в функции StartButton_Click)
+                cancellationTokenSource.Dispose();
                 cancellationTokenSource = null;
                 MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение программы остановлено.\n";
             }
