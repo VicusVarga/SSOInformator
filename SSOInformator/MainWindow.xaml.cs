@@ -24,6 +24,7 @@ namespace SSOInformator
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
         bool ServerIsStable = true; // булевое поле которое будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
+        bool isRequestInProgress = false;
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
@@ -113,9 +114,11 @@ namespace SSOInformator
                 }
                 foreach (Connection conn in _connections)
                 {
-                    if (cancellationTokenSource != null)
+                    if (cancellationTokenSource != null && isRequestInProgress == false)
                     {
+                        isRequestInProgress = true;
                         await ConnectToFtpServerAsync(conn, mistakes);
+                        isRequestInProgress = false;
                     }
                 }
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
@@ -186,7 +189,15 @@ namespace SSOInformator
                 {
                     return;
                 }
-                MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: " + ex.Message;
+                if (ex is OperationCanceledException)
+                {
+                    ex = new Exception("Невозможно соединиться с удаленным сервером");
+                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: Невозможно соединиться с удаленным сервером";
+                }
+                else
+                {
+                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: " + ex.Message;
+                }
                 ChangeTrayIconOnError(this, new RoutedEventArgs());
 
                 if (ServerIsStable)
