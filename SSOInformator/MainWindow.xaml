@@ -5,27 +5,59 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
-        Title="ОРЭ Информатор" Height="850" Width="1000" Icon="/Resources/informatorIdle_icon.ico"
+        Title="ОРЭ Информатор" Height="700" Width="830" Icon="/Resources/informatorIdle_icon.ico"
         WindowStartupLocation="CenterScreen"
         Loaded="StartButton_Click">
     <Grid>
-
         <Grid.RowDefinitions>
-            <RowDefinition Height="45" />
+            <RowDefinition Height="60" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10" Width="auto">
-            <Button x:Name="GuideButton" Content="Справка" Click="GuideButton_Click" Margin="10,0" FontFamily="Arial" FontSize="13"/>
-            <Button x:Name="SettingsButton" Click="SettingsButton_Click" Content="Настройки" Margin="10,0" FontFamily="Arial" FontSize="13"/>
-            <Button x:Name="StartButton" Content="Старт" Click="StartButton_Click" FontFamily="Arial" FontSize="13" />
-            <Button x:Name="StopButton" IsEnabled="False" Content="Стоп" Click="StopButton_Click" Margin="10,0" FontFamily="Arial" FontSize="13" />
-            <Button x:Name="ClearButton" Content="Очистить" Click="ClearButton_Click"  Margin="10,0" FontFamily="Arial" FontSize="13" />
-            <Button x:Name="ExitButton" Content="Выход" Click="ExitButton_Click" Margin="10,0" FontFamily="Arial" FontSize="13" />
-        </StackPanel>
+        <DockPanel Grid.Row="0" HorizontalAlignment="Stretch" Margin="0,5,0,10" Width="830">
+            <ToolBarTray VerticalAlignment="Center" IsLocked="True">
+                <ToolBar Width="260" IsOverflowOpen="False">
+                    <Button x:Name="StartButton" Click="StartButton_Click" FontFamily="Arial" FontSize="30">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Resources/start_icon.ico" Width="32" Height="32" Margin="0,0,5,0"/>
+                            <TextBlock Text="Старт"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="StopButton" IsEnabled="False" Click="StopButton_Click" FontFamily="Arial" FontSize="30">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Resources/stop_icon.ico" Width="32" Height="32" Margin="0,0,5,0"/>
+                            <TextBlock Text="Стоп"/>
+                        </StackPanel>
+                    </Button>
+                </ToolBar>
+                <ToolBar IsOverflowOpen="False" Height="68">
+                    <Separator Width="3" Background="Gray" Margin="0,0,15,0"></Separator>
+                    <Button x:Name="ClearButton" Click="ClearButton_Click"  FontFamily="Arial" FontSize="30">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Resources/clean_icon.ico" Width="32" Height="32" Margin="0,0,5,0"/>
+                            <TextBlock Text="Очистить"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="SettingsButton" Click="SettingsButton_Click" FontFamily="Arial" FontSize="30">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Resources/settings_icon.ico" Width="32" Height="32" Margin="0,0,5,0"/>
+                            <TextBlock Text="Настройки"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="GuideButton" Click="GuideButton_Click" FontFamily="Arial" FontSize="30">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Resources/info_icon.ico" Width="32" Height="32" Margin="0,0,5,0"/>
+                            <TextBlock Text="Справка"/>
+                        </StackPanel>
+                    </Button>
+                </ToolBar>
+            </ToolBarTray>
+        </DockPanel>
+
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <TextBox x:Name="ConsoleTextBox" Grid.Row="1" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True"  FontFamily="Arial" FontSize="14" />
         </ScrollViewer>
     </Grid>
+
 </Window>

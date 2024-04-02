@@ -10,6 +10,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Media;
+using System.Windows.Controls;
 
 namespace SSOInformator
 {
@@ -72,12 +73,16 @@ namespace SSOInformator
         }
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
-            if (isRequestInProgress == true)
+           /* if (isRequestInProgress == true)
             {
                 return;
-            }
+            }*/
             StopButton.IsEnabled = true; // Активация кнопки "стоп"
             StartButton.IsEnabled = false; // Блок кнопки "старт"
+            if (isRequestInProgress)
+            {
+                await Task.Delay(5000); // Ожидание 5 секунд
+            }
             List<Mistake> mistakes = new List<Mistake>(); //создание списка для записи айпишников неудачных подключений и видов ошибок для дальнейшей отправки в одно письмо
             cancellationTokenSource = new CancellationTokenSource(); // для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
  
@@ -195,8 +200,8 @@ namespace SSOInformator
                 }
                 if (ex is OperationCanceledException)
                 {
-                    ex = new Exception("Невозможно соединиться с удаленным сервером");
-                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: Невозможно соединиться с удаленным сервером";
+                    ex = new Exception("Время ожидания ответа истекло");
+                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: Время ожидания ответа истекло";
                 }
                 else
                 {
@@ -252,10 +257,14 @@ namespace SSOInformator
                         try
                         {
                             delayValue = int.Parse(split[0]);
-                            if (delayValue < 5000)
+                            if (delayValue < 1 || delayValue > 60)
                             {
-                                error += "Задержка меньше 5000 мс недопустима. Проверьте настройки.\n";
+                                error += "Значение задержки должно быть не менее 1-ой минуты и не более 60-ти минут. Проверьте настройки.\n";
                                 return error;
+                            }
+                            else
+                            {
+                                delayValue *= 60000;
                             }
                         }
                         catch (Exception)
@@ -450,11 +459,6 @@ namespace SSOInformator
         {
             SettingsWindow settingsWindow = new SettingsWindow();
             settingsWindow.ShowDialog();
-        }
-
-        private void ExitButton_Click(object sender, RoutedEventArgs e) // Функция обработки кнопки "Выход"
-        {
-            Close();
         }
         private void GuideButton_Click(object sender, RoutedEventArgs e) // Функция обработки кнопки "Справка"
         {

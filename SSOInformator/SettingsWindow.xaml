@@ -6,10 +6,10 @@
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="Настройки" Height="200" Width="350" Icon="/Resources/settings_icon.ico">
+        Title="Настройки" Height="200" Width="360" MaxHeight="200" MaxWidth="360" Icon="/Resources/settings_icon.ico">
     <Grid VerticalAlignment="Center">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="180" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -29,8 +29,8 @@
         <Label Grid.Row="2" Grid.Column="0" Content="Пароль" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>
         <TextBox Name="PasswordTextBox" PreviewKeyDown="PasswordTextBox_PreviewKeyDown" Grid.Row="2" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="100"/>
 
-        <Label Grid.Row="3" Grid.Column="0" Content="Задержка(в мс)" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>
-        <TextBox Name="DelayTextBox" PreviewTextInput="DelayTextBox_PreviewTextInput" PreviewKeyDown="DelayTextBox_PreviewKeyDown" Grid.Row="3" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="8"/>
+        <Label Grid.Row="3" Grid.Column="0" Content="Задержка(в минутах)" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>
+        <TextBox Name="DelayTextBox" PreviewTextInput="DelayTextBox_PreviewTextInput" PreviewKeyDown="DelayTextBox_PreviewKeyDown" Grid.Row="3" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="2"/>
 
         <Button Name="CanceButton" Click="CanceButton_Click" Grid.Row="4" Grid.Column="0" Content="Отмена" HorizontalAlignment="Left" FontFamily="Arial" Margin="75,10,0,0" FontSize="14" />
         <Button Name="OKButton" Click="OKButton_Click" Grid.Row="4" Grid.Column="1" Content="Сохранить" HorizontalAlignment="Left" Width="80" Margin="25,10,0,0" FontFamily="Arial" FontSize="14" />

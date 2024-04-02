@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 
@@ -45,6 +46,7 @@ namespace SSOInformator
         {
             string delayValue = DelayTextBox.Text;
             int.TryParse(delayValue, out int delay);
+            delay *= 60000;
             string ipValue = IPTextBox.Text;
             string loginValue = LoginTextBox.Text;
             string passwordValue = PasswordTextBox.Text;
@@ -53,9 +55,9 @@ namespace SSOInformator
                 MessageBox.Show("Все поля настроек должны быть заполнены. Пустым может быть только пароль.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            if (delay < 5000)
+            if (delay < 60000 || delay > 3600000)
             {
-                MessageBox.Show("Значение задержки должно быть больше или равно 5000.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error); // Значение задержки меньше 5000
+                MessageBox.Show("Значение задержки должно быть не менее 1-ой минуты и не более 60-ти минут.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error); // Значение задержки меньше 5000
                 return;
             }
             File.WriteAllText(settingsPath, ""); //очищение старых данных файла Settings
@@ -65,7 +67,6 @@ namespace SSOInformator
             MessageBox.Show(message, "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
             Window window = Window.GetWindow(this);
             window.Close();
-            
         }
 
         private void DelayTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) // Запрет ввода чего либо кроме цифр в текстбокс задержки
