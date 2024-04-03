@@ -53,15 +53,6 @@ namespace SSOInformator
             string ipValue = IPTextBox.Text;
             string loginValue = LoginTextBox.Text;
             string passwordValue = PasswordTextBox.Text;
-            if (settings[0] == delayValue && values[0] == ipValue && values[1] == loginValue && values[2] == passwordValue)
-            {
-                SettingsWindow settingsWindow = Window.GetWindow(this) as SettingsWindow;
-                if (settingsWindow != null)
-                {
-                    settingsWindow.Close();
-                }
-                return;
-            }
             if (string.IsNullOrEmpty(ipValue) || string.IsNullOrEmpty(loginValue) || string.IsNullOrEmpty(delayValue)) // Если нет пустых текстбоксов(исключение - текстбокс пароля)
             {
                 MessageBox.Show("Все поля настроек должны быть заполнены. Пустым может быть только пароль.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -71,6 +62,21 @@ namespace SSOInformator
             {
                 MessageBox.Show("Значение задержки должно быть не менее 1-ой минуты и не более 60-ти минут.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error); // Значение задержки меньше 5000
                 return;
+            }
+            try
+            {
+                if (settings[0] == delayValue && values[0] == ipValue && values[1] == loginValue && values[2] == passwordValue) //Если пользователь не изменил настройки, но нажал "ок" просто закрыть окно без перезапуска подключения.
+                {
+                    SettingsWindow settingsWindow = Window.GetWindow(this) as SettingsWindow;
+                    if (settingsWindow != null)
+                    {
+                        settingsWindow.Close();
+                    }
+                    return;
+                }
+            }
+            catch (Exception)
+            {
             }
             File.WriteAllText(settingsPath, ""); //очищение старых данных файла Settings
             File.AppendAllText(settingsPath, delayValue + Environment.NewLine);                                // Запись данных в файл        

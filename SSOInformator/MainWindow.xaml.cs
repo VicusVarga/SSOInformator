@@ -24,8 +24,8 @@ namespace SSOInformator
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
-        bool serverIsStable = true; // булевое поле которое будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
-        bool isRequestInProgress = false;
+        bool serverIsStable = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
+        bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
@@ -73,6 +73,7 @@ namespace SSOInformator
         }
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
+            MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение подключения запущено.\n";
             string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
             string error = "";
             error = ReadSettingsFromFile(error, settingsPath); //Вызов функции записи данных из Settings.txt в классы
@@ -84,16 +85,11 @@ namespace SSOInformator
                 StopButton.IsEnabled = false;
                 SettingsWindow settingsWindow = new SettingsWindow();
                 settingsWindow.ShowDialog();                            // Открытия окна с настройками
-                AddStartToContexMenu(this, new RoutedEventArgs());
+                AddStartToContexMenu(this, new RoutedEventArgs()); // добавление кнопки "Запустить" в контекстное меню треи
                 return;
             }
-            MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение программы запущено.\n";
             StopButton.IsEnabled = true; // Активация кнопки "стоп"
             StartButton.IsEnabled = false; // Блок кнопки "старт"
-            if (isRequestInProgress)
-            {
-                await Task.Delay(5000); // Ожидание 5 секунд
-            }
             List<Mistake> mistakes = new List<Mistake>(); //создание списка для записи айпишников неудачных подключений и видов ошибок для дальнейшей отправки в одно письмо
             cancellationTokenSource = new CancellationTokenSource(); // для отмены потока моментально после нажатия "стоп"
  
@@ -112,12 +108,10 @@ namespace SSOInformator
 
                 MenuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Запустить" была удалена
             }
-            serverIsStable = true;
             AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
-            while (cancellationTokenSource != null) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
+            while (cancellationTokenSource != null && !isRequestInProgress) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
             {            // сообщение ошибки показывается в том случае если это первый сбой в подключении к IP. Т.е. подключение к этому IP-адресу в прошлом цикле было успешным.
                          // аналогично с сообщением об успехе
-                
                 foreach (Connection conn in _connections)
                 {
                     if (cancellationTokenSource != null)
@@ -146,9 +140,9 @@ namespace SSOInformator
         {
             try
             {
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress);
-                request.Credentials = new NetworkCredential(conn.Login, conn.Password);
-                request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress); //
+                request.Credentials = new NetworkCredential(conn.Login, conn.Password);              // подключение к ftp серверу
+                request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                         //
 
                 using (CancellationTokenSource cts = new CancellationTokenSource())
                 {
@@ -156,13 +150,13 @@ namespace SSOInformator
                     var delayTask = Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
 
                     cts.CancelAfter(TimeSpan.FromSeconds(5));
-                    await Task.WhenAny(responseTask, delayTask);
+                    await Task.WhenAny(responseTask, delayTask); // 5-ти секундное ожидание подключения к серверу
                     cts.Token.ThrowIfCancellationRequested();
-                    if (cancellationTokenSource == null)
+                    if (cancellationTokenSource == null) // если во время таймера выше пользователь нажал стоп, выйти из функции подключения
                     {
                         return;
                     }
-                    using (FtpWebResponse response = (FtpWebResponse)await responseTask)
+                    using (FtpWebResponse response = (FtpWebResponse)await responseTask) // блок если подключение удалось
                     {
                         MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!";
                         ChangeTrayIconOnStable(this, new RoutedEventArgs());
@@ -189,9 +183,9 @@ namespace SSOInformator
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) //блок если подключение не удалось
             {
-                if (cancellationTokenSource == null)
+                if (cancellationTokenSource == null) // если во время таймера выше пользователь нажал стоп, выйти из функции подключения
                 {
                     return;
                 }
@@ -224,7 +218,7 @@ namespace SSOInformator
                     }
                     catch (Exception)
                     {
-                        // Обработка ошибки проигрывания звука
+                        // Звук не проигрался
                     }
                     serverIsStable = false;
                 }
@@ -303,8 +297,8 @@ namespace SSOInformator
                 cancellationTokenSource.Cancel(); // Запрос отмены потока(Бесконечного цикла в функции StartButton_Click)
                 cancellationTokenSource.Dispose();
                 cancellationTokenSource = null;
-                MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение программы остановлено.\n";
             }
+            MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение подключения остановлено.\n";
             ChangeTrayIconOnIdle(this, new RoutedEventArgs()); // Смена иконки на обычную(безцветную)
             StartButton.IsEnabled = true;
             StopButton.IsEnabled = false;

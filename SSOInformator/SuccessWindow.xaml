@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="Подключение успешно!" Height="180" Width="320" Icon="/Resources/success_icon.ico">
+        Title="Подключение успешно!" Height="180" Width="320" MaxHeight="180" MaxWidth="320" Icon="/Resources/success_icon.ico">
     <Grid>
         <Image HorizontalAlignment="Left" Height="42" Margin="10,10,0,0" VerticalAlignment="Top" Width="47" Source="/Resources/success_icon.ico"/>
         <TextBlock Name="SucessLabel" TextWrapping="Wrap" HorizontalAlignment="Left"  Margin="60,10,0,0" VerticalAlignment="Top" Height="84" Width="230" FontFamily="Arial" FontSize="14" />

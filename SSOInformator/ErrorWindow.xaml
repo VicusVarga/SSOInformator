@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
          WindowStartupLocation="CenterScreen"
-        Title="Ошибка подключения!" Height="180" Width="320" Icon="/Resources/error_icon.ico" >
+        Title="Ошибка подключения!" Height="180" Width="320" MaxHeight="180" MaxWidth="320" Icon="/Resources/error_icon.ico" >
     <Grid>
         <Image HorizontalAlignment="Left" Height="42" Margin="10,10,0,0" VerticalAlignment="Top" Width="47" Source="/Resources/error_icon.ico"/>
         <TextBlock Name="ErrorLabel" TextWrapping="Wrap" HorizontalAlignment="Left"  Margin="60,10,0,0" VerticalAlignment="Top" Height="84" Width="230" FontFamily="Arial" FontSize="14" />
