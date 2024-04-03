@@ -73,10 +73,21 @@ namespace SSOInformator
         }
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
-           /* if (isRequestInProgress == true)
+            string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
+            string error = "";
+            error = ReadSettingsFromFile(error, settingsPath); //Вызов функции записи данных из Settings.txt в классы
+            if (!string.IsNullOrEmpty(error)) // обработка если была проблема с settings.txt
             {
+                StopButton_Click(StopButton, EventArgs.Empty);
+                MessageBox.Show(error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                StartButton.IsEnabled = true;
+                StopButton.IsEnabled = false;
+                SettingsWindow settingsWindow = new SettingsWindow();
+                settingsWindow.ShowDialog();                            // Открытия окна с настройками
+                AddStartToContexMenu(this, new RoutedEventArgs());
                 return;
-            }*/
+            }
+            MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение программы запущено.\n";
             StopButton.IsEnabled = true; // Активация кнопки "стоп"
             StartButton.IsEnabled = false; // Блок кнопки "старт"
             if (isRequestInProgress)
@@ -84,7 +95,7 @@ namespace SSOInformator
                 await Task.Delay(5000); // Ожидание 5 секунд
             }
             List<Mistake> mistakes = new List<Mistake>(); //создание списка для записи айпишников неудачных подключений и видов ошибок для дальнейшей отправки в одно письмо
-            cancellationTokenSource = new CancellationTokenSource(); // для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
+            cancellationTokenSource = new CancellationTokenSource(); // для отмены потока моментально после нажатия "стоп"
  
             if (MenuItemAdded) // Удаление "Запустить" из контекстного меню иконки в трее
             {
@@ -101,26 +112,12 @@ namespace SSOInformator
 
                 MenuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Запустить" была удалена
             }
-
             serverIsStable = true;
             AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
             while (cancellationTokenSource != null) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
             {            // сообщение ошибки показывается в том случае если это первый сбой в подключении к IP. Т.е. подключение к этому IP-адресу в прошлом цикле было успешным.
                          // аналогично с сообщением об успехе
-                string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
-                string error = "";
-                error = ReadSettingsFromFile(error, settingsPath); //Вызов функции записи данных из Settings.txt в классы
-                if (!string.IsNullOrEmpty(error)) // обработка если была проблема с settings.txt
-                {
-                    StopButton_Click(StopButton, EventArgs.Empty);
-                    MessageBox.Show(error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    StartButton.IsEnabled = true;
-                    StopButton.IsEnabled = false;
-                    SettingsWindow settingsWindow = new SettingsWindow();
-                    settingsWindow.ShowDialog();                            // Открытия окна с настройками
-                    AddStartToContexMenu(this, new RoutedEventArgs());
-                    return;
-                }
+                
                 foreach (Connection conn in _connections)
                 {
                     if (cancellationTokenSource != null)
@@ -407,7 +404,16 @@ namespace SSOInformator
                 WindowState = WindowState.Normal;
                 Activate();
                 SettingsWindow settingsWindow = new SettingsWindow();
+                settingsWindow.NewSettings = false;
                 settingsWindow.ShowDialog();
+                bool result = settingsWindow.NewSettings;
+                if (result)
+                {
+                    EventArgs args = new EventArgs();
+                    StopButton_Click(this, args);
+                    EventArgs args2 = new EventArgs();
+                    StartButton_Click(this, args2);
+                }
             }
         }
         private void ExitMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Выход" в трее
@@ -458,7 +464,16 @@ namespace SSOInformator
         private void SettingsButton_Click(object sender, RoutedEventArgs e) // Функция обработки кнопки "Настройки"
         {
             SettingsWindow settingsWindow = new SettingsWindow();
+            settingsWindow.NewSettings = false;
             settingsWindow.ShowDialog();
+            bool result = settingsWindow.NewSettings;
+            if (result)
+            {
+                EventArgs args = new EventArgs();
+                StopButton_Click(this, args);
+                EventArgs args2 = new EventArgs();
+                StartButton_Click(this, args2);
+            }
         }
         private void GuideButton_Click(object sender, RoutedEventArgs e) // Функция обработки кнопки "Справка"
         {

@@ -11,17 +11,20 @@ namespace SSOInformator
     /// </summary>
     public partial class SettingsWindow : Window
     {
-        string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings 
+        string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
+        public bool NewSettings { get; set; }
+        private string[] settings;
+        private string[] values;
         public SettingsWindow()
         {
             InitializeComponent();
             if (File.Exists(settingsPath)) //если файл существует читаем его
             {
-                string[] settings = File.ReadAllLines(settingsPath);
+                settings = File.ReadAllLines(settingsPath);
 
                 if (settings.Length == 2)
                 {
-                    string[] values = settings[1].Split(' ');
+                    values = settings[1].Split(' ');
                     if (values.Length == 3)
                     {
                         DelayTextBox.Text = settings[0];             //  
@@ -36,7 +39,7 @@ namespace SSOInformator
                 File.WriteAllText(settingsPath, ""); // Если файла нет создаём его пустым
             }
         }
-        private void CanceButton_Click(object sender, RoutedEventArgs e) // Кнопка "отмена"
+        private void CancelButton_Click(object sender, RoutedEventArgs e) // Кнопка "отмена"
         {
             Window window = Window.GetWindow(this);
             window.Close();
@@ -50,6 +53,15 @@ namespace SSOInformator
             string ipValue = IPTextBox.Text;
             string loginValue = LoginTextBox.Text;
             string passwordValue = PasswordTextBox.Text;
+            if (settings[0] == delayValue && values[0] == ipValue && values[1] == loginValue && values[2] == passwordValue)
+            {
+                SettingsWindow settingsWindow = Window.GetWindow(this) as SettingsWindow;
+                if (settingsWindow != null)
+                {
+                    settingsWindow.Close();
+                }
+                return;
+            }
             if (string.IsNullOrEmpty(ipValue) || string.IsNullOrEmpty(loginValue) || string.IsNullOrEmpty(delayValue)) // Если нет пустых текстбоксов(исключение - текстбокс пароля)
             {
                 MessageBox.Show("Все поля настроек должны быть заполнены. Пустым может быть только пароль.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -67,6 +79,7 @@ namespace SSOInformator
             MessageBox.Show(message, "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
             Window window = Window.GetWindow(this);
             window.Close();
+            NewSettings = true;
         }
 
         private void DelayTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) // Запрет ввода чего либо кроме цифр в текстбокс задержки
