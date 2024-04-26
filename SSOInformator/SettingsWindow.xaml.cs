@@ -34,7 +34,7 @@ namespace SSOInformator
                         DelayTextBox.Text = settings[0];             //  
                         IPTextBox.Text = values[0];                  // Запись данных по текстбоксам
                         LoginTextBox.Text = values[1];               //
-                        PasswordTextBox.Text = values[2];            //
+                        PasswordBox.Password = values[2];        //
                     }
                 }
             }
@@ -56,7 +56,8 @@ namespace SSOInformator
             delay *= 60000;
             string ipValue = IPTextBox.Text;
             string loginValue = LoginTextBox.Text;
-            string passwordValue = PasswordTextBox.Text;
+            string passwordValue = PasswordBox.Password;
+
             if (string.IsNullOrEmpty(ipValue) || string.IsNullOrEmpty(loginValue) || string.IsNullOrEmpty(delayValue)) // Если нет пустых текстбоксов(исключение - текстбокс пароля)
             {
                 MessageBox.Show("Все поля настроек должны быть заполнены. Пустым может быть только пароль.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);

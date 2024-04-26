@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="Настройки" Height="200" Width="360" MaxHeight="200" MaxWidth="360" Icon="/Resources/settings_icon.ico">
+        Title="Настройки" Height="200" Width="380" MaxHeight="200" MaxWidth="380" Icon="/Resources/settings_icon.ico">
     <Grid VerticalAlignment="Center">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="180" />
@@ -27,7 +27,7 @@
         <TextBox Name="LoginTextBox" PreviewKeyDown="LoginTextBox_PreviewKeyDown" Grid.Row="1" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="100"/>
 
         <Label Grid.Row="2" Grid.Column="0" Content="Пароль" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>
-        <TextBox Name="PasswordTextBox" PreviewKeyDown="PasswordTextBox_PreviewKeyDown" Grid.Row="2" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="100"/>
+        <PasswordBox Name="PasswordBox" PreviewKeyDown="PasswordTextBox_PreviewKeyDown" Grid.Row="2" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="100"/>
 
         <Label Grid.Row="3" Grid.Column="0" Content="Задержка(в минутах)" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>
         <TextBox Name="DelayTextBox" PreviewTextInput="DelayTextBox_PreviewTextInput" PreviewKeyDown="DelayTextBox_PreviewKeyDown" Grid.Row="3" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="2"/>
