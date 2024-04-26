@@ -27,6 +27,7 @@ namespace SSOInformator
         private static List<Connection> _connections = new List<Connection>();
         bool serverIsStable = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
+        bool FirstStart = true;
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
@@ -77,11 +78,12 @@ namespace SSOInformator
             // Проверяем наличие параметра "-minimized" в командной строке(Такой параметр будет иметь ярлык в папке автозапуска)
             foreach (string arg in Environment.GetCommandLineArgs())
             {
-                if (arg.ToLower() == "-minimized")
+                if (arg.ToLower() == "-minimized" && FirstStart)
                 {
                     WindowState = WindowState.Minimized;
                     WindowStyle = WindowStyle.ToolWindow;
                     ShowInTaskbar = false;
+                    FirstStart = false;
                     break;
                 }
             }

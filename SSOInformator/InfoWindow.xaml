@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="Справка" Height="400" Width="850" Icon="Resources/info_icon.ico">
+        Title="Справка" Height="450" Width="850" Icon="Resources/info_icon.ico">
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <TextBox IsReadOnly="True" TextWrapping="Wrap" FontFamily="Arial" FontSize="20" xml:space="preserve">"ОРЭ Информатор" представляет собой программу оповещения специалистов о внеплановой работе FTP-сервера и подключения к FTP серверу с заданной задержкой в минутах.
