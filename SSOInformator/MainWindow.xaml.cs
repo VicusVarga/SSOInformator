@@ -75,7 +75,7 @@ namespace SSOInformator
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
             MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение подключения запущено.\n";
-            string settingsPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName, "Resources", "Settings.ini"); // Путь к файлу Settings
+            string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "SSOInformator", "Settings.ini"); // Путь к файлу Settings
             string error = "";
             error = ReadSettingsFromFile(error, settingsPath); //Вызов функции записи данных из Settings.txt в классы
             if (!string.IsNullOrEmpty(error)) // обработка если была проблема с settings.txt
@@ -236,7 +236,7 @@ namespace SSOInformator
                 error += "С последнего запуска приложения настройки не были определены. Пожалуйста, назначьте их.\n";
                 return error;
             }
-            StreamReader settings = new StreamReader(Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName + "/Resources/Settings.ini"));
+            StreamReader settings = new StreamReader(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "SSOInformator", "Settings.ini"));
             _connections = new List<Connection>();
             bool hasValidIP = false;
             bool FirstLine = true; // В первой линии содержится запись о задержке подключения
