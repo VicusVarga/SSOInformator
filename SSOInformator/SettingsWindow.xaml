@@ -20,7 +20,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Label Grid.Row="0" Grid.Column="0" Content="IP-адрес" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>
+        <Label Grid.Row="0" Grid.Column="0" Content="IP-адрес(без ftp://)" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>
         <TextBox Name="IPTextBox" PreviewKeyDown="IPTextBox_PreviewKeyDown" Grid.Row="0" Grid.Column="1" Width="150" HorizontalAlignment="Left" Margin="5,0,0,5" FontFamily="Arial" FontSize="14" MaxLength="100"/>
 
         <Label Grid.Row="1" Grid.Column="0" Content="Логин" HorizontalAlignment="Left" Margin="30,0,0,0" FontFamily="Arial" FontSize="14"/>

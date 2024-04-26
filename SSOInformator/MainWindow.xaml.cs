@@ -11,6 +11,7 @@ using System.Net;
 using System.Threading;
 using System.Media;
 using System.Windows.Controls;
+using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace SSOInformator
 {
@@ -154,10 +155,12 @@ namespace SSOInformator
                     cts.Token.ThrowIfCancellationRequested();
                     if (cancellationTokenSource == null) // если во время таймера выше пользователь нажал стоп, выйти из функции подключения
                     {
+                        request.Abort();
                         return;
                     }
                     using (FtpWebResponse response = (FtpWebResponse)await responseTask) // блок если подключение удалось
                     {
+                        request.Abort();
                         MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!";
                         ChangeTrayIconOnStable(this, new RoutedEventArgs());
 
@@ -192,11 +195,11 @@ namespace SSOInformator
                 if (ex is OperationCanceledException)
                 {
                     ex = new Exception("Время ожидания ответа истекло");
-                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: Время ожидания ответа истекло";
+                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: Время ожидания ответа истекло";
                 }
                 else
                 {
-                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP " + conn.IPAddress + " Ошибка: " + ex.Message;
+                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ex.Message;
                 }
                 ChangeTrayIconOnError(this, new RoutedEventArgs());
 
