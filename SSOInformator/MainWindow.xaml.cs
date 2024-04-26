@@ -74,6 +74,17 @@ namespace SSOInformator
         }
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
+            // Проверяем наличие параметра "-minimized" в командной строке(Такой параметр будет иметь ярлык в папке автозапуска)
+            foreach (string arg in Environment.GetCommandLineArgs())
+            {
+                if (arg.ToLower() == "-minimized")
+                {
+                    WindowState = WindowState.Minimized;
+                    WindowStyle = WindowStyle.ToolWindow;
+                    ShowInTaskbar = false;
+                    break;
+                }
+            }
             MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение подключения запущено.\n";
             string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "SSOInformator", "Settings.ini"); // Путь к файлу Settings
             string error = "";
