@@ -2,6 +2,7 @@
 using System.Windows;
 using Forms = System.Windows.Forms;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 
 namespace SSOInformator
@@ -13,23 +14,27 @@ namespace SSOInformator
     {
         public Forms.NotifyIcon _notifyIcon; // Для иконки в трее
 
+        [DllImport("user32", CharSet = CharSet.Unicode)]
+        static extern IntPtr FindWindow(string cls, string win);
+        [DllImport("user32")]
+        static extern IntPtr SetForegroundWindow(IntPtr hWnd);
+        [DllImport("user32")]
+        static extern bool IsIconic(IntPtr hWnd);
+        [DllImport("user32")]
+        static extern bool OpenIcon(IntPtr hWnd);
         private App()
         {
             _notifyIcon = new Forms.NotifyIcon(); //для иконки в трее
         }
-        private Mutex _mutex; // Мьютекс нужен для запрета повторного запуска приложения
+        private Mutex _mutex;
         protected override void OnStartup(StartupEventArgs e)
         {
-            bool createdNew;
-            _mutex = new Mutex(true, "MyAppMutex", out createdNew);
-
-            if (!createdNew)
-            { // Приложение уже запущено
-                MessageBox.Show("Приложение уже запущено! Проверьте иконку в трее Windows.",
-                                "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // Устанавливаем флаг, указывающий, что есть окно "Приложение уже запущено" дабы избежать дальнейшего окна "Вы хотите закрыть приложение?"
-                ((MainWindow)Current.MainWindow).isAppAlreadyRunning = true;
+            bool isNew;
+            _mutex = new Mutex(true, "My Singleton Instance", out isNew);
+            if (!isNew)
+            {
+                ActivateOtherWindow();
+                Environment.Exit(0);
             }
 
             _notifyIcon.Icon = new System.Drawing.Icon("Resources/informatorIdle_icon.ico");
@@ -38,6 +43,16 @@ namespace SSOInformator
             _notifyIcon.Visible = true;
 
             base.OnStartup(e);
+        }
+        private static void ActivateOtherWindow()
+        {
+            var other = FindWindow(null, "ОРЭ Информатор");
+            if (other != IntPtr.Zero)
+            {
+                SetForegroundWindow(other);
+                if (IsIconic(other))
+                    OpenIcon(other);
+            }
         }
         private void NotifyIcon_Click(object sender, EventArgs e) // Обработка разворачивания окна при клике по иконке в трее
         {
