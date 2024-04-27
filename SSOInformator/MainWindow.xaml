@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
-        Title="ОРЭ Информатор" Height="700" Width="830" Icon="/Resources/informatorIdle_icon.ico"
+        Title="ОРЭ Информатор" Height="700" Width="830"
         WindowStartupLocation="CenterScreen"
         Loaded="StartButton_Click">
     <Grid>

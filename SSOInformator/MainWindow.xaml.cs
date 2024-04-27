@@ -97,6 +97,7 @@ namespace SSOInformator
                 MessageBox.Show(error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 StartButton.IsEnabled = true;
                 StopButton.IsEnabled = false;
+                this.WindowState = WindowState.Normal;
                 SettingsWindow settingsWindow = new SettingsWindow();
                 settingsWindow.ShowDialog();                            // Открытия окна с настройками
                 AddStartToContexMenu(this, new RoutedEventArgs()); // добавление кнопки "Запустить" в контекстное меню треи
