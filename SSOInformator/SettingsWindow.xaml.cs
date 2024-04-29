@@ -53,7 +53,6 @@ namespace SSOInformator
         {
             string delayValue = DelayTextBox.Text;
             int.TryParse(delayValue, out int delay);
-            delay *= 60000;
             string ipValue = IPTextBox.Text;
             string loginValue = LoginTextBox.Text;
             string passwordValue = PasswordBox.Password;
@@ -63,7 +62,7 @@ namespace SSOInformator
                 MessageBox.Show("Все поля настроек должны быть заполнены. Пустым может быть только пароль.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            if (delay < 60000 || delay > 3600000)
+            if (delay < 1 || delay > 60)
             {
                 MessageBox.Show("Значение задержки должно быть не менее 1-ой минуты и не более 60-ти минут.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error); // Значение задержки меньше 5000
                 return;

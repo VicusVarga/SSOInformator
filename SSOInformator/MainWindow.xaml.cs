@@ -25,7 +25,7 @@ namespace SSOInformator
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
-        bool serverIsStable = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
+        bool ServerStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
         bool FirstStart = true;
 
@@ -131,9 +131,7 @@ namespace SSOInformator
                 {
                     if (cancellationTokenSource != null)
                     {
-                        isRequestInProgress = true;
                         await ConnectToFtpServerAsync(conn, mistakes);
-                        isRequestInProgress = false;
                     }
                 }
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
@@ -153,96 +151,88 @@ namespace SSOInformator
         }
         private async Task ConnectToFtpServerAsync(Connection conn, List<Mistake> mistakes)
         {
-            try
+            isRequestInProgress = true;
+            string ErrorMassege = "";
+            bool ServerStatusBeforeConnection = ServerStatus;
+            await Task.Run(() =>
             {
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress); //
-                request.Credentials = new NetworkCredential(conn.Login, conn.Password);              // подключение к ftp серверу
-                request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                         //
-
-                using (CancellationTokenSource cts = new CancellationTokenSource())
+                try
                 {
-                    var responseTask = request.GetResponseAsync();
-                    var delayTask = Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
+                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress); //
+                    request.Credentials = new NetworkCredential(conn.Login, conn.Password);              // подключение к ftp серверу
+                    request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                         //
 
-                    cts.CancelAfter(TimeSpan.FromSeconds(5));
-                    await Task.WhenAny(responseTask, delayTask); // 5-ти секундное ожидание подключения к серверу
-                    cts.Token.ThrowIfCancellationRequested();
-                    if (cancellationTokenSource == null) // если во время таймера выше пользователь нажал стоп, выйти из функции подключения
+                    var response = (FtpWebResponse)request.GetResponse();
+
+                    using (response) // блок если подключение удалось
                     {
                         request.Abort();
-                        return;
-                    }
-                    using (FtpWebResponse response = (FtpWebResponse)await responseTask) // блок если подключение удалось
-                    {
-                        request.Abort();
-                        MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!";
-                        ChangeTrayIconOnStable(this, new RoutedEventArgs());
-
-                        if (!serverIsStable)
-                        {
-                            Mistake mist = new Mistake();
-                            mist.IPAddress = conn.IPAddress;
-                            mistakes.Add(mist);
-                            SuccessWindow successWindow = new SuccessWindow(mistakes);
-                            successWindow.Topmost = true;
-                            successWindow.Show();
-                            try
-                            {
-                                SoundPlayer successSound = new SoundPlayer("Resources/success_sound.wav");
-                                successSound.Play();
-                            }
-                            catch (Exception)
-                            {
-                                // Звук не проигрался
-                            }
-                        }
-                        serverIsStable = true;
+                        ServerStatus = true;
                     }
                 }
+                catch (Exception ex)
+                {
+                    ErrorMassege = ex.Message;
+                    ServerStatus = false;
+                }
+            });
+            if (cancellationTokenSource == null)
+            {
+                isRequestInProgress = false;
+                return;
             }
-            catch (Exception ex) //блок если подключение не удалось
+            if (ServerStatus)
             {
-                if (cancellationTokenSource == null) // если во время таймера выше пользователь нажал стоп, выйти из функции подключения
-                {
-                    return;
-                }
-                if (ex is OperationCanceledException)
-                {
-                    ex = new Exception("Время ожидания ответа истекло");
-                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: Время ожидания ответа истекло";
-                }
-                else
-                {
-                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ex.Message;
-                }
+                ChangeTrayIconOnStable(this, new RoutedEventArgs());
+                MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!\n";
+            }
+            else
+            {
+                MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ErrorMassege + "\n";
                 ChangeTrayIconOnError(this, new RoutedEventArgs());
+            }
+            if (ServerStatusBeforeConnection == true && ServerStatus == false)
+            {
+                Mistake mist = new Mistake();
+                mist.IPAddress = conn.IPAddress;
+                mist.typeofmistake = ErrorMassege;
+                mistakes.Add(mist);
 
-                if (serverIsStable)
+                ErrorWindow errorWindow = new ErrorWindow(mistakes);
+                errorWindow.Topmost = true;
+                errorWindow.Show();
+
+                try
                 {
-                    Mistake mist = new Mistake();
-                    mist.IPAddress = conn.IPAddress;
-                    mist.typeofmistake = ex.Message;
-                    mistakes.Add(mist);
-
-                    ErrorWindow errorWindow = new ErrorWindow(mistakes);
-                    errorWindow.Topmost = true;
-                    errorWindow.Show();
-
-                    try
-                    {
-                        SoundPlayer errorSound = new SoundPlayer("Resources/error_sound.wav");
-                        errorSound.Play();
-                    }
-                    catch (Exception)
-                    {
-                        // Звук не проигрался
-                    }
-                    serverIsStable = false;
+                    SoundPlayer errorSound = new SoundPlayer("Resources/error_sound.wav");
+                    errorSound.Play();
+                }
+                catch (Exception)
+                {
+                    // Звук не проигрался
                 }
             }
-
-            MainWindow.Instance.ConsoleTextBox.Text += "\n";
+            else if (ServerStatusBeforeConnection == false && ServerStatus == true)
+            {
+                Mistake mist = new Mistake();
+                mist.IPAddress = conn.IPAddress;
+                mistakes.Add(mist);
+                SuccessWindow successWindow = new SuccessWindow(mistakes);
+                successWindow.Topmost = true;
+                successWindow.Show();
+                try
+                {
+                    SoundPlayer successSound = new SoundPlayer("Resources/success_sound.wav");
+                    successSound.Play();
+                }
+                catch (Exception)
+                {
+                    // Звук не проигрался
+                }
+            }
+            isRequestInProgress = false;
         }
+
         private static string ReadSettingsFromFile(string error, string settingsPath) //Функция чтения файла Settings в классы
         {
             if (!File.Exists(settingsPath) || new FileInfo(settingsPath).Length == 0)
