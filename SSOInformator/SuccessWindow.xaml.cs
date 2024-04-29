@@ -22,7 +22,7 @@ namespace SSOInformator
                 errorMessage += "Подключение успешно!\nIP-адрес: " + IpAdress.IPAddress + "\n";
             }
             SucessLabel.Text = errorMessage;
-            // Создаем и запускаем таймер с интервалом в 1 минуту
+            // Таймер автоматического закрытия окна
             timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromMinutes(30);
             timer.Tick += Timer_Tick;
