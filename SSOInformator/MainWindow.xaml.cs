@@ -60,6 +60,10 @@ namespace SSOInformator
                 {
                     e.Cancel = true;
                 }
+                else
+                {
+                    Application.Current.Shutdown();
+                }
             base.OnClosing(e);
         }
         public class Connection // Класс Подключений со сведением о подключаемом сервере.
