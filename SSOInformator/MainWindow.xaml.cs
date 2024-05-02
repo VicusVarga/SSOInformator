@@ -28,6 +28,7 @@ namespace SSOInformator
         bool ServerStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
         bool FirstStart = true;
+        bool SettingsChanged = false;
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
@@ -143,7 +144,14 @@ namespace SSOInformator
                 {
                     if (cancellationTokenSource != null)
                     {
-                        await Task.Delay(delayValue, cancellationTokenSource.Token); // Задержка с мониторингом отмены потока
+                        if (!SettingsChanged)
+                        {
+                            await Task.Delay(delayValue, cancellationTokenSource.Token); // Задержка с мониторингом отмены потока
+                        }
+                        else
+                        {
+                            SettingsChanged = false;
+                        }
                     }
                 }
                 catch (TaskCanceledException)
@@ -192,8 +200,16 @@ namespace SSOInformator
             }
             else
             {
-                MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ErrorMassege + "\n";
-                ChangeTrayIconOnError(this, new RoutedEventArgs());
+                if (SettingsChanged)
+                {
+                    isRequestInProgress = false;
+                    return;
+                }
+                else
+                {
+                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ErrorMassege + "\n";
+                    ChangeTrayIconOnError(this, new RoutedEventArgs());
+                }
             }
             if (ServerStatusBeforeConnection == true && ServerStatus == false)
             {
@@ -394,6 +410,7 @@ namespace SSOInformator
         }
         private void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
         {
+
             bool isWindowOpen = false;
 
             foreach (Window w in Application.Current.Windows)
@@ -414,6 +431,10 @@ namespace SSOInformator
                 bool result = settingsWindow.NewSettings;
                 if (result)
                 {
+                    if (isRequestInProgress)
+                    {
+                        SettingsChanged = true;
+                    }
                     EventArgs args = new EventArgs();
                     StopButton_Click(this, args);
                     EventArgs args2 = new EventArgs();
@@ -474,6 +495,10 @@ namespace SSOInformator
             bool result = settingsWindow.NewSettings;
             if (result)
             {
+                if (isRequestInProgress)
+                {
+                    SettingsChanged = true;
+                }
                 EventArgs args = new EventArgs();
                 StopButton_Click(this, args);
                 EventArgs args2 = new EventArgs();

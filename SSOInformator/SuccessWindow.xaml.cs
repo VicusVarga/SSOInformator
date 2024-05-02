@@ -19,7 +19,7 @@ namespace SSOInformator
             string errorMessage = "";
             foreach (Mistake IpAdress in Ipinfo)
             {
-                errorMessage += "Подключение успешно!\nIP-адрес: " + IpAdress.IPAddress + "\n";
+                errorMessage += "Подключение выполнено успешно!\nIP-адрес: " + IpAdress.IPAddress + "\n";
             }
             SucessLabel.Text = errorMessage;
             // Таймер автоматического закрытия окна
