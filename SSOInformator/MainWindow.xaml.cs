@@ -171,7 +171,7 @@ namespace SSOInformator
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress); //
             request.Credentials = new NetworkCredential(conn.Login, conn.Password);              // параметры подключения
             request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                         //
-            bool serverIsStableBeforeConnection = serverIsStable;
+            bool ServerStatusBeforeConnection = ServerStatus;
             await Task.Run(() =>
             {
                 try
