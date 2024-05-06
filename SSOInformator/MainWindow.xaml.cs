@@ -25,7 +25,7 @@ namespace SSOInformator
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
-        bool ServerStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
+        bool serverStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
         bool FirstStart = true; // Переменная определяющая что приложение только что запустили, нужно для корректной обработки при автозапуске
         bool SettingsChanged = false; //Переменная которая будет менять значение если настройки приложения бы
@@ -171,7 +171,7 @@ namespace SSOInformator
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress); //
             request.Credentials = new NetworkCredential(conn.Login, conn.Password);              // параметры подключения
             request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                         //
-            bool ServerStatusBeforeConnection = ServerStatus;
+            bool ServerStatusBeforeConnection = serverStatus;
             await Task.Run(() =>
             {
                 try
@@ -183,7 +183,7 @@ namespace SSOInformator
                         request.Abort();
                         if (cancellationTokenSource != null || !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
                         {
-                            serverIsStable = true;
+                            serverStatus = true;
                         }
                     }
                 }
@@ -193,7 +193,7 @@ namespace SSOInformator
                     if (cancellationTokenSource != null || !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
                     {
                         ErrorMassege = ex.Message;
-                        serverIsStable = false;
+                        serverStatus = false;
                     }
                 }
             });
@@ -202,7 +202,7 @@ namespace SSOInformator
                 request.Abort();
                 return;
             }
-            if (serverIsStable) //Если подключение удачно вывести в консоль об этом
+            if (serverStatus) //Если подключение удачно вывести в консоль об этом
             {
                 ChangeTrayIconOnStable(this, new RoutedEventArgs());
                 MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!\n";
@@ -212,7 +212,7 @@ namespace SSOInformator
                 MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ErrorMassege + "\n";
                 ChangeTrayIconOnError(this, new RoutedEventArgs());
             }
-            if (serverIsStableBeforeConnection == true && serverIsStable == false) //Если в прошлом подключении сервер был доступен, а в этом нет показать всплывающее окно
+            if (ServerStatusBeforeConnection == true && serverStatus == false) //Если в прошлом подключении сервер был доступен, а в этом нет показать всплывающее окно
             {
                 Mistake mist = new Mistake();
                 mist.IPAddress = conn.IPAddress;
@@ -233,7 +233,7 @@ namespace SSOInformator
                     // Звук не проигрался
                 }
             }
-            else if (serverIsStableBeforeConnection == false && serverIsStable == true) //Если в прошлом подключении сервер был недоступен, а в этом стал доступен показать всплывающее окно
+            else if (ServerStatusBeforeConnection == false && serverStatus == true) //Если в прошлом подключении сервер был недоступен, а в этом стал доступен показать всплывающее окно
             {
                 Mistake mist = new Mistake();
                 mist.IPAddress = conn.IPAddress;
