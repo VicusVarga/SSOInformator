@@ -25,7 +25,7 @@ namespace SSOInformator
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
         private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
-        bool serverIsStable = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
+        bool ServerStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
         bool FirstStart = true; // Переменная определяющая что приложение только что запустили, нужно для корректной обработки при автозапуске
         bool SettingsChanged = false; //Переменная которая будет менять значение если настройки приложения бы
@@ -136,9 +136,7 @@ namespace SSOInformator
                 {
                     if (cancellationTokenSource != null)
                     {
-                        isRequestInProgress = true;
                         await ConnectToFtpServerAsync(conn, mistakes);
-                        isRequestInProgress = false;
                     }
                 }
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
@@ -150,7 +148,14 @@ namespace SSOInformator
                     }
                     else if (cancellationTokenSource != null)
                     {
-                        await Task.Delay(delayValue, cancellationTokenSource.Token); // Задержка с мониторингом отмены потока
+                        if (!SettingsChanged)
+                        {
+                            await Task.Delay(delayValue, cancellationTokenSource.Token); // Задержка с мониторингом отмены потока
+                        }
+                        else
+                        {
+                            SettingsChanged = false;
+                        }
                     }
                 }
                 catch (TaskCanceledException)
@@ -171,7 +176,6 @@ namespace SSOInformator
             {
                 try
                 {
-
                     var response = (FtpWebResponse)request.GetResponse(); //само подключение
 
                     using (response) // блок если подключение удалось
@@ -248,6 +252,7 @@ namespace SSOInformator
                 }
             }
         }
+
         private static string ReadSettingsFromFile(string error, string settingsPath) //Функция чтения файла Settings в классы
         {
             if (!File.Exists(settingsPath) || new FileInfo(settingsPath).Length == 0)
@@ -405,6 +410,7 @@ namespace SSOInformator
         }
         private void SettingsButton_Click(object sender, EventArgs e) // Обработки кнопки "Настройки"(как в самой программе так и в трее)
         {
+
             bool isWindowOpen = false;
 
             foreach (Window w in Application.Current.Windows)
