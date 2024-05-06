@@ -27,8 +27,8 @@ namespace SSOInformator
         private static List<Connection> _connections = new List<Connection>();
         bool ServerStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
-        bool FirstStart = true;
-        bool SettingsChanged = false;
+        bool FirstStart = true; // Переменная определяющая что приложение только что запустили, нужно для корректной обработки при автозапуске
+        bool SettingsChanged = false; //Переменная которая будет менять значение если настройки приложения бы
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
@@ -54,18 +54,18 @@ namespace SSOInformator
         }
         protected override void OnClosing(CancelEventArgs e) // Обработка при закрытии приложения. Для подтверждения выхода.
         {
-                MessageBoxResult result = MessageBox.Show("Вы действительно хотите закрыть приложение?",
-                                                          "Подтверждение закрытия", MessageBoxButton.YesNo,
-                                                          MessageBoxImage.Information);
-                if (result == MessageBoxResult.No)
-                {
-                    e.Cancel = true;
-                }
-                else
-                {
-                    Application.Current.Shutdown();
-                }
-            base.OnClosing(e);
+            MessageBoxResult result = MessageBox.Show("Вы действительно хотите закрыть приложение?",
+                                                      "Подтверждение закрытия", MessageBoxButton.YesNo,
+                                                      MessageBoxImage.Information);
+            if (result == MessageBoxResult.No)
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                Application.Current.Shutdown();
+                base.OnClosing(e);
+            }
         }
         public class Connection // Класс Подключений со сведением о подключаемом сервере.
         {
@@ -142,7 +142,11 @@ namespace SSOInformator
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
                 try
                 {
-                    if (cancellationTokenSource != null)
+                    if (SettingsChanged) //Если во время попытки подключения были изменены настройки то таймер пропускается, т.к. сама функция подключения не должна писать о состоянии сервера со старыми настройками
+                    {
+                        SettingsChanged = false;
+                    }
+                    else if (cancellationTokenSource != null)
                     {
                         if (!SettingsChanged)
                         {
@@ -161,57 +165,54 @@ namespace SSOInformator
                 }
             }
         }
-        private async Task ConnectToFtpServerAsync(Connection conn, List<Mistake> mistakes)
+        private async Task ConnectToFtpServerAsync(Connection conn, List<Mistake> mistakes) // функция подключения к серверу
         {
-            isRequestInProgress = true;
             string ErrorMassege = "";
-            bool ServerStatusBeforeConnection = ServerStatus;
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress); //
+            request.Credentials = new NetworkCredential(conn.Login, conn.Password);              // параметры подключения
+            request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                         //
+            bool serverIsStableBeforeConnection = serverIsStable;
             await Task.Run(() =>
             {
                 try
                 {
-                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + conn.IPAddress); //
-                    request.Credentials = new NetworkCredential(conn.Login, conn.Password);              // подключение к ftp серверу
-                    request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;                         //
-
-                    var response = (FtpWebResponse)request.GetResponse();
+                    var response = (FtpWebResponse)request.GetResponse(); //само подключение
 
                     using (response) // блок если подключение удалось
                     {
                         request.Abort();
-                        ServerStatus = true;
+                        if (cancellationTokenSource != null || !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
+                        {
+                            serverIsStable = true;
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    ErrorMassege = ex.Message;
-                    ServerStatus = false;
+                    request.Abort();
+                    if (cancellationTokenSource != null || !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
+                    {
+                        ErrorMassege = ex.Message;
+                        serverIsStable = false;
+                    }
                 }
             });
-            if (cancellationTokenSource == null)
+            if (cancellationTokenSource == null || SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки выйти из функции
             {
-                isRequestInProgress = false;
+                request.Abort();
                 return;
             }
-            if (ServerStatus)
+            if (serverIsStable) //Если подключение удачно вывести в консоль об этом
             {
                 ChangeTrayIconOnStable(this, new RoutedEventArgs());
                 MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Подключение к IP: " + conn.IPAddress + " выполнено успешно!\n";
             }
-            else
+            else //Если подключение неудачно вывести в консоль об этом
             {
-                if (SettingsChanged)
-                {
-                    isRequestInProgress = false;
-                    return;
-                }
-                else
-                {
-                    MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ErrorMassege + "\n";
-                    ChangeTrayIconOnError(this, new RoutedEventArgs());
-                }
+                MainWindow.Instance.ConsoleTextBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + "Ошибка подключения к IP: " + conn.IPAddress + " Ошибка: " + ErrorMassege + "\n";
+                ChangeTrayIconOnError(this, new RoutedEventArgs());
             }
-            if (ServerStatusBeforeConnection == true && ServerStatus == false)
+            if (serverIsStableBeforeConnection == true && serverIsStable == false) //Если в прошлом подключении сервер был доступен, а в этом нет показать всплывающее окно
             {
                 Mistake mist = new Mistake();
                 mist.IPAddress = conn.IPAddress;
@@ -232,7 +233,7 @@ namespace SSOInformator
                     // Звук не проигрался
                 }
             }
-            else if (ServerStatusBeforeConnection == false && ServerStatus == true)
+            else if (serverIsStableBeforeConnection == false && serverIsStable == true) //Если в прошлом подключении сервер был недоступен, а в этом стал доступен показать всплывающее окно
             {
                 Mistake mist = new Mistake();
                 mist.IPAddress = conn.IPAddress;
@@ -250,7 +251,6 @@ namespace SSOInformator
                     // Звук не проигрался
                 }
             }
-            isRequestInProgress = false;
         }
 
         private static string ReadSettingsFromFile(string error, string settingsPath) //Функция чтения файла Settings в классы
@@ -317,7 +317,7 @@ namespace SSOInformator
             }
             return error;
         }
-        private void StopButton_Click(object sender, EventArgs e)
+        private void StopButton_Click(object sender, EventArgs e) //Кнопка "Стоп"
         {
             if (cancellationTokenSource != null)
             {
@@ -371,7 +371,7 @@ namespace SSOInformator
             contextMenu.MenuItems.Add(startMenuItem);
 
             var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");
-            settingsMenuItem.Click += SettingsMenuItem_Click;
+            settingsMenuItem.Click += SettingsButton_Click;
             contextMenu.MenuItems.Add(settingsMenuItem);
 
             var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
@@ -401,14 +401,14 @@ namespace SSOInformator
             contextMenu.MenuItems.Add(stopMenuItem);
 
             var settingsMenuItem = new System.Windows.Forms.MenuItem("Настройки");
-            settingsMenuItem.Click += SettingsMenuItem_Click;
+            settingsMenuItem.Click += SettingsButton_Click;
             contextMenu.MenuItems.Add(settingsMenuItem);
 
             var exitMenuItem = new System.Windows.Forms.MenuItem("Выход");
             exitMenuItem.Click += ExitMenuItem_Click;
             contextMenu.MenuItems.Add(exitMenuItem);
         }
-        private void SettingsMenuItem_Click(object sender, EventArgs e) // Обработки контестной кнопки "Настройки" в трее
+        private void SettingsButton_Click(object sender, EventArgs e) // Обработки кнопки "Настройки"(как в самой программе так и в трее)
         {
 
             bool isWindowOpen = false;
@@ -485,25 +485,6 @@ namespace SSOInformator
                 ConsoleTextBox.Text = string.Empty;
             }
 
-        }
-
-        private void SettingsButton_Click(object sender, RoutedEventArgs e) // Функция обработки кнопки "Настройки"
-        {
-            SettingsWindow settingsWindow = new SettingsWindow();
-            settingsWindow.NewSettings = false;
-            settingsWindow.ShowDialog();
-            bool result = settingsWindow.NewSettings;
-            if (result)
-            {
-                if (isRequestInProgress)
-                {
-                    SettingsChanged = true;
-                }
-                EventArgs args = new EventArgs();
-                StopButton_Click(this, args);
-                EventArgs args2 = new EventArgs();
-                StartButton_Click(this, args2);
-            }
         }
         private void GuideButton_Click(object sender, RoutedEventArgs e) // Функция обработки кнопки "Справка"
         {
