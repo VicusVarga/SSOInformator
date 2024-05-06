@@ -59,7 +59,7 @@ namespace SSOInformator
             var mouseEvent = e as Forms.MouseEventArgs;
 
             if (mouseEvent != null && mouseEvent.Button == Forms.MouseButtons.Left) // Условие If нужно чтобы приложение разворачивалось только тогда когда была нажата ЛКМ по иконке
-            {                                                                       // Если был выбран элемент из контекстного меню то разворачиваться оно не будет
+            {                                                                       // Если был выбран элемент из контекстного меню то разворачиваться оно не будет(Исключение - настройки)
                 MainWindow.WindowState = WindowState.Normal;
                 MainWindow.Activate();
             }
