@@ -136,7 +136,9 @@ namespace SSOInformator
                 {
                     if (cancellationTokenSource != null)
                     {
+                        isRequestInProgress = true;
                         await ConnectToFtpServerAsync(conn, mistakes);
+                        isRequestInProgress = false;
                     }
                 }
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
