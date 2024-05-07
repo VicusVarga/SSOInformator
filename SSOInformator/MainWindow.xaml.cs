@@ -183,7 +183,7 @@ namespace SSOInformator
                     using (response) // блок если подключение удалось
                     {
                         request.Abort();
-                        if (cancellationTokenSource != null || !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
+                        if (cancellationTokenSource != null && !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
                         {
                             serverStatus = true;
                         }
@@ -192,7 +192,7 @@ namespace SSOInformator
                 catch (Exception ex)
                 {
                     request.Abort();
-                    if (cancellationTokenSource != null || !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
+                    if (cancellationTokenSource != null && !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
                     {
                         ErrorMassege = ex.Message;
                         serverStatus = false;
@@ -412,9 +412,7 @@ namespace SSOInformator
         }
         private void SettingsButton_Click(object sender, EventArgs e) // Обработки кнопки "Настройки"(как в самой программе так и в трее)
         {
-
             bool isWindowOpen = false;
-
             foreach (Window w in Application.Current.Windows)
             {
                 if (w is SettingsWindow)
