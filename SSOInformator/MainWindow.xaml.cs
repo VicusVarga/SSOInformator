@@ -23,12 +23,11 @@ namespace SSOInformator
         private static int delayValue; //переменная задержки
         private InfoWindow infoWindow; // Поле для хранения ссылки на информационное окно
         public bool isAppAlreadyRunning = false; // Флаг, указывающий, что есть окно "Приложение уже запущено". Это поможет обойти окно "Вы хотите закрыть приложение" в функции OnClosing()
-        private bool MenuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
+        private bool menuItemAdded = false; // Флаг для отслеживания состояния кнопки "Остановить" в контекстном меню иконки в трее
         private static List<Connection> _connections = new List<Connection>();
         bool serverStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
-        bool FirstStart = true; // Переменная определяющая что приложение только что запустили, нужно для корректной обработки при автозапуске
-        bool SettingsChanged = false; //Переменная которая будет менять значение если настройки приложения бы
+        bool settingsChanged = false; //Переменная которая будет менять значение если настройки приложения были изменены во время попытки подключения к серверу
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
@@ -37,6 +36,17 @@ namespace SSOInformator
         {
             InitializeComponent();
             Instance = this;
+            // Проверяем наличие параметра "-minimized" в командной строке(Такой параметр будет иметь ярлык в папке автозапуска)
+            foreach (string arg in Environment.GetCommandLineArgs())
+            {
+                if (arg.ToLower() == "-minimized")
+                {
+                    WindowState = WindowState.Minimized;
+                    WindowStyle = WindowStyle.ToolWindow;
+                    StartButton_Click(this, EventArgs.Empty);
+                    break;
+                }
+            }
         }
         protected override void OnStateChanged(System.EventArgs e) // При свёртывании окна приложения значок на панели пуск и в alt-tab будет пропадать.
         {
@@ -80,18 +90,6 @@ namespace SSOInformator
         }
         private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
         {
-            // Проверяем наличие параметра "-minimized" в командной строке(Такой параметр будет иметь ярлык в папке автозапуска)
-            foreach (string arg in Environment.GetCommandLineArgs())
-            {
-                if (arg.ToLower() == "-minimized" && FirstStart)
-                {
-                    WindowState = WindowState.Minimized;
-                    WindowStyle = WindowStyle.ToolWindow;
-                    ShowInTaskbar = false;
-                    FirstStart = false;
-                    break;
-                }
-            }
             MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение подключения запущено.\n";
             string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "SSOInformator", "Settings.ini"); // Путь к файлу Settings
             string error = "";
@@ -113,7 +111,7 @@ namespace SSOInformator
             List<Mistake> mistakes = new List<Mistake>(); //создание списка для записи айпишников неудачных подключений и видов ошибок для дальнейшей отправки в одно письмо
             cancellationTokenSource = new CancellationTokenSource(); // для отмены потока моментально после нажатия "стоп"
  
-            if (MenuItemAdded) // Удаление "Запустить" из контекстного меню иконки в трее
+            if (menuItemAdded) // Удаление "Запустить" из контекстного меню иконки в трее
             {
                 App app = Application.Current as App;
                 var contextMenu = app._notifyIcon.ContextMenu;
@@ -126,7 +124,7 @@ namespace SSOInformator
                     contextMenu.MenuItems.Remove(startMenuItem);
                 }
 
-                MenuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Запустить" была удалена
+                menuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Запустить" была удалена
             }
             AddStopToContexMenu(this, new RoutedEventArgs()); //добавить "Остановить" в контекстное меню
             while (cancellationTokenSource != null && !isRequestInProgress) // Беск.цикл  подключающийся к ip-адресам и отправляющий сообщение ошибки/успеха
@@ -144,19 +142,19 @@ namespace SSOInformator
                 mistakes.Clear();   //очищаем весь класс проблемных айпишников для след. цикла
                 try
                 {
-                    if (SettingsChanged) //Если во время попытки подключения были изменены настройки то таймер пропускается, т.к. сама функция подключения не должна писать о состоянии сервера со старыми настройками
+                    if (settingsChanged) //Если во время попытки подключения были изменены настройки то таймер пропускается, т.к. сама функция подключения не должна писать о состоянии сервера со старыми настройками
                     {
-                        SettingsChanged = false;
+                        settingsChanged = false;
                     }
                     else if (cancellationTokenSource != null)
                     {
-                        if (!SettingsChanged)
+                        if (!settingsChanged)
                         {
                             await Task.Delay(delayValue, cancellationTokenSource.Token); // Задержка с мониторингом отмены потока
                         }
                         else
                         {
-                            SettingsChanged = false;
+                            settingsChanged = false;
                         }
                     }
                 }
@@ -183,7 +181,7 @@ namespace SSOInformator
                     using (response) // блок если подключение удалось
                     {
                         request.Abort();
-                        if (cancellationTokenSource != null && !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
+                        if (cancellationTokenSource != null && !settingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
                         {
                             serverStatus = true;
                         }
@@ -192,14 +190,14 @@ namespace SSOInformator
                 catch (Exception ex)
                 {
                     request.Abort();
-                    if (cancellationTokenSource != null && !SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
+                    if (cancellationTokenSource != null && !settingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки то не нужно фиксировать попытку
                     {
                         ErrorMassege = ex.Message;
                         serverStatus = false;
                     }
                 }
             });
-            if (cancellationTokenSource == null || SettingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки выйти из функции
+            if (cancellationTokenSource == null || settingsChanged) //Если во время попытки подключения была нажата кнопка "Стоп" или изменены настройки выйти из функции
             {
                 request.Abort();
                 return;
@@ -332,7 +330,7 @@ namespace SSOInformator
             StartButton.IsEnabled = true;
             StopButton.IsEnabled = false;
 
-            if (MenuItemAdded) // Удаление "Остановить" из контекстного меню в трее
+            if (menuItemAdded) // Удаление "Остановить" из контекстного меню в трее
             {
                 App app = Application.Current as App;
                 var contextMenu = app._notifyIcon.ContextMenu;
@@ -346,7 +344,7 @@ namespace SSOInformator
                     contextMenu.MenuItems.Remove(stopMenuItem);
                 }
 
-                MenuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Остановить" была удалена
+                menuItemAdded = false; // Устанавливаем флаг в false, чтобы пометить, что кнопка "Остановить" была удалена
             }
             AddStartToContexMenu(this, new RoutedEventArgs()); //Добавление "Запустить" в контекстное меню
         }
@@ -433,12 +431,15 @@ namespace SSOInformator
                 {
                     if (isRequestInProgress)
                     {
-                        SettingsChanged = true;
+                        settingsChanged = true;
                     }
-                    EventArgs args = new EventArgs();
-                    StopButton_Click(this, args);
-                    EventArgs args2 = new EventArgs();
-                    StartButton_Click(this, args2);
+                    if (cancellationTokenSource != null)
+                    {
+                        EventArgs args = new EventArgs();
+                        StopButton_Click(this, args);
+                        EventArgs args2 = new EventArgs();
+                        StartButton_Click(this, args2); 
+                    }
                 }
             }
         }
