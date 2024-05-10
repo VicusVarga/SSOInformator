@@ -11,7 +11,6 @@ using System.Net;
 using System.Threading;
 using System.Media;
 using System.Windows.Controls;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace SSOInformator
 {
@@ -28,6 +27,8 @@ namespace SSOInformator
         bool serverStatus = true; // булевая переменная которую будем использовать чтобы понимать было ли подключение в прошлом цикле удачным. Нужно для отображения окна ошибки/успеха без спама.
         bool isRequestInProgress = false; // булевая переменная которая будет иметь данные о том выполняется ли сейчас попытка подключения к серверу. для контроля асинхронных функций.
         bool settingsChanged = false; //Переменная которая будет менять значение если настройки приложения были изменены во время попытки подключения к серверу
+        bool autostart = false; // Переменная для понимания того что программа запущена через автозапуск
+        bool firstStart = true; // Переменная для понимания того что программа только что запустилась
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
@@ -45,9 +46,7 @@ namespace SSOInformator
             {
                 if (arg.ToLower() == "-minimized")
                 {
-                    WindowState = WindowState.Minimized;
-                    OnStateChanged(null);
-                    StartButton_Click(this, EventArgs.Empty);
+                    autostart = true;
                     break;
                 }
             }
@@ -92,8 +91,20 @@ namespace SSOInformator
             public string IPAddress { set; get; }
             public string typeofmistake { set; get; }
         }
-        private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт"
+        private async void StartButton_Click(object sender, EventArgs e) //Кнопка "Старт", при старте вызывается автоматически
         {
+            if (autostart && firstStart) // Если запущено через автозапуск и это первый цикл программы - свернуть окно и продолжить подключение
+            {
+                WindowState = WindowState.Minimized;
+                WindowStyle = WindowStyle.ToolWindow;
+                firstStart = false;
+            }
+            else if (!autostart && firstStart) //Если запущено не через автозапуск и это первый цикл программы - прервать подключение
+            {
+                AddStartToContexMenu(this, new RoutedEventArgs());
+                firstStart = false;
+                return;
+            }
             MainWindow.Instance.ConsoleTextBox.Text += $"[{DateTime.Now.ToString("HH:mm:ss")}] Выполнение подключения запущено.\n";
             string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "SSOInformator", "Settings.ini"); // Путь к файлу Settings
             string error = "";

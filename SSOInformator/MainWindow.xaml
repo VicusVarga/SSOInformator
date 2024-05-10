@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:SSOInformator"
         mc:Ignorable="d"
         Title="ОРЭ Информатор" Height="700" Width="830"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Loaded="StartButton_Click">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="60" />
