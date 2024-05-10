@@ -46,7 +46,7 @@ namespace SSOInformator
                 if (arg.ToLower() == "-minimized")
                 {
                     WindowState = WindowState.Minimized;
-                    WindowStyle = WindowStyle.ToolWindow;
+                    OnStateChanged(null);
                     StartButton_Click(this, EventArgs.Empty);
                     break;
                 }
