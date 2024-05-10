@@ -31,11 +31,15 @@ namespace SSOInformator
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(); // для кнопки "стоп", для отмены потока моментально после нажатия "стоп"(чтобы из-за задержки не багавало)
                                                                                                  // Обработчик события для кнопки "Ок"
+
         public static MainWindow Instance { get; private set; }
         public MainWindow()
         {
             InitializeComponent();
             Instance = this;
+            cancellationTokenSource.Cancel();
+            cancellationTokenSource.Dispose();
+            cancellationTokenSource = null;
             // Проверяем наличие параметра "-minimized" в командной строке(Такой параметр будет иметь ярлык в папке автозапуска)
             foreach (string arg in Environment.GetCommandLineArgs())
             {
